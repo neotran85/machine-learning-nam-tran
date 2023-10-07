@@ -7,105 +7,73 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import LabelEncoder
 import streamlit as st
+import base64
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+import streamlit as st
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
+le_gender = LabelEncoder()
+le_item = LabelEncoder()
 
-# Upload dataset
-st.title("Predict Churn of Telecom Services")
+# CSS to style the sidebar
+style = """
+    <style>
+        .sidebar .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #avatar {
+            border-radius: 50%;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            width: 100px;
+        }
+        #name {
+            font-weight: bold;
+            font-size: 20px;
+            color: #4A90E2;
+        }
+    </style>
+"""
+# Function to convert image to base64
+def get_image_base64(path):
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode('utf-8')
 
-def handleMissingData(df):
-    # Identify and handle missing values
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            # For string columns, fill NaN with the most frequent value in that column
-            df[col].fillna(df[col].mode()[0], inplace=True)
-        else:
-            # For numeric columns, fill NaN with the median value of that column
-            df[col].fillna(df[col].median(), inplace=True)
-    return df
-def processData(df):
-    le = LabelEncoder()
+avatar_base64 = get_image_base64("avatar.png")
 
-    # Drop Customer_ID as it's an identifier and not a predictor
-    df.drop('Customer_ID', axis=1, inplace=True)
-    df = handleMissingData(df)
-    # Identify all non-numeric columns
-    string_cols = df.select_dtypes(include='object').columns
-    for col in string_cols:
-        df[col] = le.fit_transform(df[col])
-        
-    # Assume 'churn' is the target column
-    X = df.drop('churn', axis=1)
-    y = df['churn']
+# Applying the CSS style
+st.markdown(style, unsafe_allow_html=True)
 
-    # Split data into training and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Displaying avatar and name on the sidebar with styling
+st.sidebar.markdown(f'<img id="avatar" src="data:image/png;base64,{avatar_base64}" />', unsafe_allow_html=True)
+st.sidebar.markdown('<p id="name">Nam Tran</p>', unsafe_allow_html=True)
+st.sidebar.markdown("""I am a passionate individual with a keen interest in the realm of machine learning. Driven by curiosity and a deep-seated desire to unravel the complexities of data, I continually seek to harness the power of algorithms to extract meaningful insights and solve real-world problems. Whether it's building predictive models or delving into the intricacies of neural networks, my enthusiasm for the field is palpable. Always eager to learn and evolve, I believe that machine learning holds the key to the future, and is fervently working towards making a significant impact in this dynamic domain.""", unsafe_allow_html=True)
 
-    # Scale the data
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-    clf = LogisticRegression(max_iter=1000)  # Increased max_iter for convergence
-    clf.fit(X_train_scaled, y_train)
-    y_pred = clf.predict(X_test_scaled)
-    results = pd.DataFrame({'Actual': y_test, 'Predicted': y_pred})
+# Your social media links
+linkedin_link = "https://www.linkedin.com/in/nam-tran-bb765220b"
+telegram_link = "https://t.me/namtrantelegram"
 
-    # Counting the actual churns and no-churns
-    actual_counts = results['Actual'].value_counts()
-    predicted_counts = results['Predicted'].value_counts()
+telegram_base64 = get_image_base64("telegram.png")
+linkedId_base64 = get_image_base64("linkedin.png")
 
-    # Setting the bar positions
-    bar_positions = range(2)  # Assuming binary classification: churned or not-churned
-    bar_width = 0.35
+st.sidebar.markdown(
+    f'''
+    <a href="{telegram_link}" target="_blank">
+        <img id="telegram_avatar" src="data:image/png;base64,{telegram_base64}" style="width:50px; height:50px; display:inline; margin-right:10px;"/>
+    </a>
+    <a href="{linkedin_link}" target="_blank">
+        <img id="linkedin_avatar" src="data:image/png;base64,{linkedId_base64}" style="width:50px; height:50px; display:inline;"/>
+    </a>
+    ''', 
+    unsafe_allow_html=True
+)
 
-    # Create a new figure and axis
-    fig, ax = plt.subplots(figsize=(10,6))
-
-    # Creating bars on the ax
-    ax.bar(bar_positions, actual_counts, width=bar_width, label='Actual', color='blue')
-    ax.bar([pos+bar_width for pos in bar_positions], predicted_counts, width=bar_width, label='Predicted', color='red')
-
-    # Adding labels, title, and legend
-    ax.set_xlabel('Churn')
-    ax.set_ylabel('Count')
-    ax.set_title('Actual vs Predicted Churn')
-    ax.set_xticks([pos+bar_width/2 for pos in bar_positions])
-    ax.set_xticklabels(['No Churn', 'Churn'])
-    ax.legend()
-
-    # Display the plot
-    plt.tight_layout()
-    st.pyplot(fig)
-
-def plotChurnOverTime(df):
-    # Group by eqpdays and compute churn rate
-    churn_rate = df.groupby('eqpdays')['churn'].mean()
-
-    fig, ax = plt.subplots(figsize=(10,6))
-    churn_rate.plot(ax=ax)
-    ax.set_title('Churn Rate over Time (eqpdays)')
-    ax.set_ylabel('Churn Rate')
-    ax.set_xlabel('Equipment Days')
-    plt.tight_layout()
-    st.pyplot(fig)
-
-def plotPieLoyalty(df):
-    # Count of loyal vs not loyal
-    churn_counts = df['churn'].value_counts()
-
-    # Plot
-    labels = ['Loyal', 'Not Loyal']
-    colors = ['green', 'red']
-    explode = (0.1, 0)  # explode 1st slice for emphasis
-
-    fig, ax = plt.subplots(figsize=(10,6))
-    ax.pie(churn_counts, explode=explode, labels=labels, colors=colors,
-    autopct='%1.1f%%', shadow=True, startangle=140)
-    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    ax.set_title("Percentage of Customers Loyal vs. Not Loyal")
-    st.pyplot(fig)
-    plt.show()
-
-data = pd.read_csv('Telecom_customer.csv')
-processData(data)
-plotChurnOverTime(data)
-plotPieLoyalty(data)
-
+# DEMO
+st.title("Demo")
