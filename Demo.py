@@ -76,46 +76,83 @@ st.sidebar.markdown(
 )
 
 # DEMO
-st.title("Demo")
-import streamlit as st
-import openai
-import requests
+#I - Data Preprocessing
+df = pd.read_csv('breast_cancer.csv')
+print(df)
+import pandas as pd
+st.title("Missing Data Visualization with Missingno")
+st.write("Missing data matrix:")
 
-# Configure OpenAI API
+st.title("Missing Data Visualization")
 
-def generate_and_structure_quiz(topic):
-    # Set up OpenAI API key
-    openai.api_key = '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'    
-    # Define the prompt
-    prompt_text = f"Please generate 10 multiple-choice questions on the topic of {topic}. Format each question as follows:\n\nQuestion: [Question Text]\nA) [Choice A]\nB) [Choice B]\nC) [Choice C]\nD) [Choice D]\nAnswer: [Letter of Correct Answer]\n\nUse a newline to separate each question."
-    
-    # Get the model's response
-    response = openai.Completion.create(engine="davinci", prompt=prompt_text, max_tokens=1000)
-    raw_quiz = response.choices[0].text.strip()
+# Create a heatmap of missing data
+st.write("### Missing Data Heatmap:")
 
-    # Process raw quiz to structured data
-    raw_questions = raw_quiz.split("\n\n")
-    structured_questions = []
+# Convert data presence (True/False) into integers (1/0)
+df = df.drop('Patient_ID', axis=1)
+print(df)
+def showHeatMap(data):
+    missing_data = data.isnull()
+    fig, ax = plt.subplots(figsize=(12, 8))
+    sns.heatmap(missing_data, cbar=False, cmap="viridis_r", ax=ax)
+    ax.set_title("Missing Data Heatmap (Yellow for missing values)")
+    st.pyplot(fig)
+showHeatMap(df)
 
-    for rq in raw_questions:
-        lines = rq.split("\n")
-        question_text = lines[0].split(": ")[1]
-        options = {
-            "A": lines[1].split(") ")[1],
-            "B": lines[2].split(") ")[1],
-            "C": lines[3].split(") ")[1],
-            "D": lines[4].split(") ")[1]
-        }
-        answer = lines[5].split(": ")[1]
-        
-        structured_questions.append({
-            "question": question_text,
-            "options": options,
-            "answer": answer
-        })
-    print(structured_questions)
-    return structured_questions
-# Streamlit App
-st.title("Quiz Generator using OpenAI")
-quiz = generate_and_structure_quiz("Machine Learning")
-    
+# Drop rows where more than 50% of data is missing
+threshold = 0.5 * len(df.columns) # 50% of the number of columns
+df = df.dropna(thresh=threshold)
+showHeatMap(df)
+
+numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+
+from sklearn.impute import SimpleImputer
+mean_imputer = SimpleImputer(strategy='mean')
+df_mean_imputed = df.copy()
+
+def convertDateToMilliseconds(date_string):
+    try:
+        date_obj = pd.to_datetime(date_string, format="%d-%b-%y")
+        timestamp_millis = int(date_obj.timestamp() * 1000)
+        return timestamp_millis
+    except: return None
+def roman_to_int(s: str) -> int:
+    roman_dict = {
+        'I': 1,
+        'V': 5,
+        'X': 10,
+        'L': 50,
+        'C': 100,
+        'D': 500,
+        'M': 1000
+    }
+
+    total = 0
+    prev_value = 0
+
+    for char in s[::-1]:  # Reverse the string for easy processing
+        value = roman_dict[char]
+        if value < prev_value:
+            total -= value
+        else:
+            total += value
+        prev_value = value
+
+    return total
+
+df_mean_imputed['Date_of_Surgery'] = df_mean_imputed['Date_of_Surgery'].apply(convertDateToMilliseconds)
+df_mean_imputed['Date_of_Last_Visit'] = df_mean_imputed['Date_of_Last_Visit'].apply(convertDateToMilliseconds)
+df_mean_imputed['Tumour_Stage'] = df_mean_imputed['Tumour_Stage'].apply(roman_to_int)
+categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+for col in categorical_cols:
+    df_mean_imputed[col] = df_mean_imputed[col].astype('category').cat.codes
+print(df_mean_imputed)
+
+numeric_cols = df_mean_imputed.select_dtypes(include=['float64', 'int64']).columns.tolist()
+mean_imputer = SimpleImputer(strategy='mean')
+df_mean_imputed[numeric_cols] = mean_imputer.fit_transform(df_mean_imputed[numeric_cols])
+showHeatMap(df_mean_imputed)
+
+def is_all_numeric(df):
+    return df.select_dtypes(include=['number']).shape[1] == df.shape[1]
+print(is_all_numeric(df_mean_imputed))
