@@ -77,3 +77,45 @@ st.sidebar.markdown(
 
 # DEMO
 st.title("Demo")
+import streamlit as st
+import openai
+import requests
+
+# Configure OpenAI API
+
+def generate_and_structure_quiz(topic):
+    # Set up OpenAI API key
+    openai.api_key = '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'    
+    # Define the prompt
+    prompt_text = f"Please generate 10 multiple-choice questions on the topic of {topic}. Format each question as follows:\n\nQuestion: [Question Text]\nA) [Choice A]\nB) [Choice B]\nC) [Choice C]\nD) [Choice D]\nAnswer: [Letter of Correct Answer]\n\nUse a newline to separate each question."
+    
+    # Get the model's response
+    response = openai.Completion.create(engine="davinci", prompt=prompt_text, max_tokens=1000)
+    raw_quiz = response.choices[0].text.strip()
+
+    # Process raw quiz to structured data
+    raw_questions = raw_quiz.split("\n\n")
+    structured_questions = []
+
+    for rq in raw_questions:
+        lines = rq.split("\n")
+        question_text = lines[0].split(": ")[1]
+        options = {
+            "A": lines[1].split(") ")[1],
+            "B": lines[2].split(") ")[1],
+            "C": lines[3].split(") ")[1],
+            "D": lines[4].split(") ")[1]
+        }
+        answer = lines[5].split(": ")[1]
+        
+        structured_questions.append({
+            "question": question_text,
+            "options": options,
+            "answer": answer
+        })
+    print(structured_questions)
+    return structured_questions
+# Streamlit App
+st.title("Quiz Generator using OpenAI")
+quiz = generate_and_structure_quiz("Machine Learning")
+    

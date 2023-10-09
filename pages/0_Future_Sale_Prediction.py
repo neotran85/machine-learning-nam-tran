@@ -78,7 +78,6 @@ def processData(filename):
     # Load dataset
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-
     # Convert 'Dt_Customer' column to datetime
     data['Dt_Customer'] = pd.to_datetime(data['Dt_Customer'])
 

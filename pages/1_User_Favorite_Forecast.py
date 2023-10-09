@@ -7,6 +7,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
+
 le_gender = LabelEncoder()
 le_item = LabelEncoder()
 
