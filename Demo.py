@@ -17,6 +17,9 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
+import dateutil.parser
+import re
+
 le_gender = LabelEncoder()
 le_item = LabelEncoder()
 
@@ -74,85 +77,93 @@ st.sidebar.markdown(
     ''', 
     unsafe_allow_html=True
 )
-
-# DEMO
-#I - Data Preprocessing
-df = pd.read_csv('breast_cancer.csv')
-print(df)
-import pandas as pd
-st.title("Missing Data Visualization with Missingno")
-st.write("Missing data matrix:")
-
-st.title("Missing Data Visualization")
-
-# Create a heatmap of missing data
-st.write("### Missing Data Heatmap:")
-
-# Convert data presence (True/False) into integers (1/0)
-df = df.drop('Patient_ID', axis=1)
-print(df)
 def showHeatMap(data):
     missing_data = data.isnull()
     fig, ax = plt.subplots(figsize=(12, 8))
     sns.heatmap(missing_data, cbar=False, cmap="viridis_r", ax=ax)
     ax.set_title("Missing Data Heatmap (Yellow for missing values)")
     st.pyplot(fig)
+
+def is_date_string(cols):
+    # Regex pattern for date strings in the format DD-MM-YY for example: 01-Jan-23.
+    pattern = re.compile(r'\d{2}-[a-zA-Z]{3}-\d{2}')
+    # Return True if any of the values in cols match the pattern, else False.
+    return any(pattern.match(str(val)) for val in cols) 
+  
+  
+# DEMO
+# I - Data Preprocessing
+df = pd.read_csv('breast_cancer.csv')
+print(df)
+# Drop all rows having 100% missing values
+df.dropna(axis=0, how='all', inplace=True)
+showHeatMap(df)
+# Drop the column named Patient_ID
+df.drop('Patient_ID', axis=1, inplace=True)
+
+# Missing Values
+st.markdown("## Missing Values:")
+
+for column in df.columns:
+    if df[column].dtype == 'object':
+        df[column].fillna(df[column].mode()[0], inplace=True)
+print(df)
+# Find columns with date strings
+date_cols = [col for col in df.columns if is_date_string(df[col])]
+
+for column in date_cols:
+        temp = pd.to_datetime(df[column])
+        df[column] = temp.astype('int64') // 10**6
+print(df)
+# For date_cols, find missing data and replace with K Nearest Neighbor imputation
+from sklearn.impute import KNNImputer
+imputer = KNNImputer(n_neighbors=3)
+df[date_cols] = imputer.fit_transform(df[date_cols])
 showHeatMap(df)
 
-# Drop rows where more than 50% of data is missing
-threshold = 0.5 * len(df.columns) # 50% of the number of columns
-df = df.dropna(thresh=threshold)
-showHeatMap(df)
+# Check if there are any missing values left
+print(df.isnull().sum())
+# Encoding
+st.markdown("## Encoding:")
+# For categorical columns, if it is binary with only two unique values, use cat codes to encode
+for column in df.columns:
+    if df[column].dtype == 'object':
+        len_unique = len(df[column].unique())
+        if len_unique == 1:
+            df[column] = 1
+        elif len_unique == 2:
+            df[column] = df[column].astype('category').cat.codes
+print(df)
 
-numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+# check if there are any binary categorical columns left
+print(df.nunique())
+# For categorical columns, use one hot encoding
+df = pd.get_dummies(df, drop_first=True)
+print(df)
+# Check if the data frame is ready for modeling
+print(df.head())
 
-from sklearn.impute import SimpleImputer
-mean_imputer = SimpleImputer(strategy='mean')
-df_mean_imputed = df.copy()
+# Visualize the data distribution
+st.markdown("## Data Distribution:")
+st.markdown("### Histogram:")
+for column in df.columns:
+    fig, ax = plt.subplots()
+    sns.histplot(df[column], ax=ax)
+    st.pyplot(fig)
+st.markdown("### Boxplot:")
+for column in df.columns:
+    fig, ax = plt.subplots()
+    sns.boxplot(df[column], ax=ax)
+    st.pyplot(fig)
+st.markdown("### Violinplot:")
+for column in df.columns:
+    fig, ax = plt.subplots()
+    sns.violinplot(df[column], ax=ax)
+    st.pyplot(fig)
+st.markdown("### Scatterplot:")
+for column in df.columns:
+    fig, ax = plt.subplots()
+    sns.scatterplot(x=df[column], y=df['Breast Cancer'], ax=ax)
+    st.pyplot(fig)
 
-def convertDateToMilliseconds(date_string):
-    try:
-        date_obj = pd.to_datetime(date_string, format="%d-%b-%y")
-        timestamp_millis = int(date_obj.timestamp() * 1000)
-        return timestamp_millis
-    except: return None
-def roman_to_int(s: str) -> int:
-    roman_dict = {
-        'I': 1,
-        'V': 5,
-        'X': 10,
-        'L': 50,
-        'C': 100,
-        'D': 500,
-        'M': 1000
-    }
 
-    total = 0
-    prev_value = 0
-
-    for char in s[::-1]:  # Reverse the string for easy processing
-        value = roman_dict[char]
-        if value < prev_value:
-            total -= value
-        else:
-            total += value
-        prev_value = value
-
-    return total
-
-df_mean_imputed['Date_of_Surgery'] = df_mean_imputed['Date_of_Surgery'].apply(convertDateToMilliseconds)
-df_mean_imputed['Date_of_Last_Visit'] = df_mean_imputed['Date_of_Last_Visit'].apply(convertDateToMilliseconds)
-df_mean_imputed['Tumour_Stage'] = df_mean_imputed['Tumour_Stage'].apply(roman_to_int)
-categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
-for col in categorical_cols:
-    df_mean_imputed[col] = df_mean_imputed[col].astype('category').cat.codes
-print(df_mean_imputed)
-
-numeric_cols = df_mean_imputed.select_dtypes(include=['float64', 'int64']).columns.tolist()
-mean_imputer = SimpleImputer(strategy='mean')
-df_mean_imputed[numeric_cols] = mean_imputer.fit_transform(df_mean_imputed[numeric_cols])
-showHeatMap(df_mean_imputed)
-
-def is_all_numeric(df):
-    return df.select_dtypes(include=['number']).shape[1] == df.shape[1]
-print(is_all_numeric(df_mean_imputed))
