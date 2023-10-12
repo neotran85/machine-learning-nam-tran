@@ -19,6 +19,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 import dateutil.parser
 import re
+import sweetviz as sv
 
 le_gender = LabelEncoder()
 le_item = LabelEncoder()
@@ -84,86 +85,52 @@ def showHeatMap(data):
     ax.set_title("Missing Data Heatmap (Yellow for missing values)")
     st.pyplot(fig)
 
-def is_date_string(cols):
-    # Regex pattern for date strings in the format DD-MM-YY for example: 01-Jan-23.
-    pattern = re.compile(r'\d{2}-[a-zA-Z]{3}-\d{2}')
-    # Return True if any of the values in cols match the pattern, else False.
-    return any(pattern.match(str(val)) for val in cols) 
-  
+# Show boxplot of all columns of data frame function
+def showBoxPlots(data):
+    fig, ax = plt.subplots(figsize=(12, 8))
+    sns.boxplot(data=data, ax=ax)
+    ax.set_title("Boxplot of all columns")
+    st.pyplot(fig)
   
 # DEMO
-# I - Data Preprocessing
-df = pd.read_csv('breast_cancer.csv')
-print(df)
-# Drop all rows having 100% missing values
-df.dropna(axis=0, how='all', inplace=True)
-showHeatMap(df)
-# Drop the column named Patient_ID
-df.drop('Patient_ID', axis=1, inplace=True)
+st.title("AI Image Labeling")
 
-# Missing Values
-st.markdown("## Missing Values:")
+import io
+from google.cloud import vision
+from google.oauth2 import service_account
 
-for column in df.columns:
-    if df[column].dtype == 'object':
-        df[column].fillna(df[column].mode()[0], inplace=True)
-print(df)
-# Find columns with date strings
-date_cols = [col for col in df.columns if is_date_string(df[col])]
+# Define the path to your service account JSON key file
+# Upload image file
+uploaded_image = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
 
-for column in date_cols:
-        temp = pd.to_datetime(df[column])
-        df[column] = temp.astype('int64') // 10**6
-print(df)
-# For date_cols, find missing data and replace with K Nearest Neighbor imputation
-from sklearn.impute import KNNImputer
-imputer = KNNImputer(n_neighbors=3)
-df[date_cols] = imputer.fit_transform(df[date_cols])
-showHeatMap(df)
+if uploaded_image is not None:
+    # Display the uploaded image
+    st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
 
-# Check if there are any missing values left
-print(df.isnull().sum())
-# Encoding
-st.markdown("## Encoding:")
-# For categorical columns, if it is binary with only two unique values, use cat codes to encode
-for column in df.columns:
-    if df[column].dtype == 'object':
-        len_unique = len(df[column].unique())
-        if len_unique == 1:
-            df[column] = 1
-        elif len_unique == 2:
-            df[column] = df[column].astype('category').cat.codes
-print(df)
+    # Label the image when the user clicks a button
+    if st.button("Label Image"):
+        # Define the path to your service account JSON key file
+        key_file_path = "key.json"
 
-# check if there are any binary categorical columns left
-print(df.nunique())
-# For categorical columns, use one hot encoding
-df = pd.get_dummies(df, drop_first=True)
-print(df)
-# Check if the data frame is ready for modeling
-print(df.head())
+        # Authenticate using the service account key
+        credentials = service_account.Credentials.from_service_account_file(
+            key_file_path, scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        )
 
-# Visualize the data distribution
-st.markdown("## Data Distribution:")
-st.markdown("### Histogram:")
-for column in df.columns:
-    fig, ax = plt.subplots()
-    sns.histplot(df[column], ax=ax)
-    st.pyplot(fig)
-st.markdown("### Boxplot:")
-for column in df.columns:
-    fig, ax = plt.subplots()
-    sns.boxplot(df[column], ax=ax)
-    st.pyplot(fig)
-st.markdown("### Violinplot:")
-for column in df.columns:
-    fig, ax = plt.subplots()
-    sns.violinplot(df[column], ax=ax)
-    st.pyplot(fig)
-st.markdown("### Scatterplot:")
-for column in df.columns:
-    fig, ax = plt.subplots()
-    sns.scatterplot(x=df[column], y=df['Breast Cancer'], ax=ax)
-    st.pyplot(fig)
+        # Create a Vision API client
+        client = vision.ImageAnnotatorClient(credentials=credentials)
 
+        # Read the uploaded image file
+        image_data = uploaded_image.read()
 
+        # Perform label detection on the image
+        image = vision.Image(content=image_data)
+        response = client.label_detection(image=image)
+
+        # Get labels from the response
+        labels = response.label_annotations
+
+        # Display the detected labels
+        st.write("Detected Labels:")
+        for label in labels:
+            st.write(f"Label: {label.description}, Score: {label.score}")
