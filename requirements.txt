@@ -8,3 +8,4 @@ sweetviz
 google-auth
 google-auth-oauthlib
 google-cloud
+seaborn
