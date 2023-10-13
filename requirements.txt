@@ -3,3 +3,7 @@ numpy
 pandas
 pydeck
 streamlit
+sweetviz
+google-auth
+google-auth-oauthlib
+google-cloud
