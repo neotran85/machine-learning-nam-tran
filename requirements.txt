@@ -1,4 +1,5 @@
 altair
+scikit-learn
 numpy
 pandas
 pydeck
@@ -7,4 +8,3 @@ sweetviz
 google-auth
 google-auth-oauthlib
 google-cloud
-sklearn
