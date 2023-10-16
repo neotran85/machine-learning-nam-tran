@@ -20,6 +20,11 @@ from sklearn.preprocessing import LabelEncoder
 import dateutil.parser
 import re
 import sweetviz as sv
+from azure.cognitiveservices.vision.computervision import ComputerVisionClient
+from msrest.authentication import CognitiveServicesCredentials
+from azure.cognitiveservices.vision.computervision.models import VisualFeatureTypes
+from PIL import Image, ImageDraw, ImageFont
+
 
 le_gender = LabelEncoder()
 le_item = LabelEncoder()
@@ -101,36 +106,39 @@ from google.oauth2 import service_account
 
 # Define the path to your service account JSON key file
 # Upload image file
-uploaded_image = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
+# Replace with your Azure Computer Vision API credentials
+subscription_key = '778c7e6500f547cc9e57c09018ad06eb'
+endpoint = 'https://testdemo2.cognitiveservices.azure.com/'
+# Create a client
+client = ComputerVisionClient(endpoint, CognitiveServicesCredentials(subscription_key))
 
-if uploaded_image is not None:
-    # Display the uploaded image
-    st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
+# Set up the Streamlit app
+uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
-    # Label the image when the user clicks a button
+if uploaded_image:
     if st.button("Label Image"):
-        # Define the path to your service account JSON key file
-        key_file_path = "key.json"
+        # Convert the bytes object to a file-like object
+        image_stream = io.BytesIO(uploaded_image.read())
 
-        # Authenticate using the service account key
-        credentials = service_account.Credentials.from_service_account_file(
-            key_file_path, scopes=["https://www.googleapis.com/auth/cloud-platform"]
-        )
+        # Analyze the image and get object tags
+        results = client.analyze_image_in_stream(image_stream, visual_features=[VisualFeatureTypes.objects])
 
-        # Create a Vision API client
-        client = vision.ImageAnnotatorClient(credentials=credentials)
+        # Get the object tags
+        object_tags = results.objects
 
-        # Read the uploaded image file
-        image_data = uploaded_image.read()
+        # Create a PIL Image object from the uploaded image
+        image = Image.open(image_stream)
 
-        # Perform label detection on the image
-        image = vision.Image(content=image_data)
-        response = client.label_detection(image=image)
+        # Load the "arial.ttf" font for text drawing
+        font_size = 50  # Adjust the font size as needed
+        font = ImageFont.truetype("arial.ttf", font_size)
 
-        # Get labels from the response
-        labels = response.label_annotations
+        # Draw the bounding box for each object and label with the specified font
+        draw = ImageDraw.Draw(image)
+        for obj in object_tags:
+            bounding_box = obj.rectangle
+            draw.rectangle([bounding_box.x, bounding_box.y, bounding_box.x + bounding_box.w, bounding_box.y + bounding_box.h], outline='red')
+            draw.text((bounding_box.x, bounding_box.y), obj.object_property, fill='black', font=font)
 
-        # Display the detected labels
-        st.write("Detected Labels:")
-        for label in labels:
-            st.write(f"Label: {label.description}, Score: {label.score}")
+        # Display the image with the bounding boxes and labels overlaid
+        st.image(image, use_column_width=True)
