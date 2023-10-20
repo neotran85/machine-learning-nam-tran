@@ -144,7 +144,7 @@ if uploaded_image:
             asticaAPI_key = '66B65C6D-CC58-4E17-89B6-36808A6082EAF4CAA167-1D86-4FEF-8B3C-C946E3B7D61E'  # visit https://astica.ai
             asticaAPI_timeout = 100  # in seconds. "gpt" or "gpt_detailed" require increased timeouts
             asticaAPI_endpoint = 'https://vision.astica.ai/describe'
-            asticaAPI_modelVersion = '2.0_full'  # '1.0_full', '2.0_full', or '2.1_full'
+            asticaAPI_modelVersion = '2.1_full'  # '1.0_full', '2.0_full', or '2.1_full'
 
             # vision parameters:  https://astica.ai/vision/documentation/#parameters
             asticaAPI_visionParams = 'gpt_detailed,describe_all'  # comma separated, defaults to "all".
