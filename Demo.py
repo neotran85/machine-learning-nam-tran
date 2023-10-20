@@ -149,7 +149,7 @@ if uploaded_image:
             # vision parameters:  https://astica.ai/vision/documentation/#parameters
             asticaAPI_visionParams = 'gpt_detailed,describe_all'  # comma separated, defaults to "all".
             asticaAPI_gpt_prompt = 'In Vietnamese, describe the images about layout, positions, colors, impression, as a professional designer.'
-            asticaAPI_prompt_length = '400'  # number of words in GPT response
+            asticaAPI_prompt_length = '1000'  # number of words in GPT response
             # Define payload dictionary
             asticaAPI_payload = {
                 'tkn': asticaAPI_key,
@@ -167,7 +167,7 @@ if uploaded_image:
 
         # print API output
         if 'caption_GPTS' in asticaAPI_result:
-            st.markdown('Description:' + asticaAPI_result['caption_GPTS'])
+            st.markdown('Description: ' + asticaAPI_result['caption_GPTS'])
         else:
             st.markdown('No description available.')
         st.image(uploaded_image, use_column_width=True)
