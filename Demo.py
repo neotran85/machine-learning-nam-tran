@@ -131,7 +131,7 @@ def asticaAPI(endpoint, payload, timeout):
 # Set up the Streamlit app
 uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 if uploaded_image:
-    if st.button("Describe the uploaded image"):
+    if st.button("Hãy mô tả hình ảnh vừa upload"):
         # Read the uploaded image as bytes
         image_bytes = uploaded_image.read()
 
@@ -139,7 +139,7 @@ if uploaded_image:
         asticaAPI_input = base64.b64encode(image_bytes).decode('utf-8')
 
         # Display the loader
-        with st.spinner('Analyzing...'):
+        with st.spinner('Đang phân tích...'):
             # API configurations
             asticaAPI_key = '66B65C6D-CC58-4E17-89B6-36808A6082EAF4CAA167-1D86-4FEF-8B3C-C946E3B7D61E'  # visit https://astica.ai
             asticaAPI_timeout = 100  # in seconds. "gpt" or "gpt_detailed" require increased timeouts
