@@ -148,7 +148,7 @@ if uploaded_image:
 
             # vision parameters:  https://astica.ai/vision/documentation/#parameters
             asticaAPI_visionParams = 'gpt_detailed,describe_all'  # comma separated, defaults to "all".
-            asticaAPI_gpt_prompt = 'In Vietnamese, describe the images about layout, positions, colors, impression, as a professional designer.'
+            asticaAPI_gpt_prompt = 'In Vietnamese, describe the images about layout, positions, colors, impression, as a professional designer. Finally, show how to improve it for marketing'
             asticaAPI_prompt_length = '1000'  # number of words in GPT response
             # Define payload dictionary
             asticaAPI_payload = {
