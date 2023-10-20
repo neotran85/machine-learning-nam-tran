@@ -24,7 +24,12 @@ from azure.cognitiveservices.vision.computervision import ComputerVisionClient
 from msrest.authentication import CognitiveServicesCredentials
 from azure.cognitiveservices.vision.computervision.models import VisualFeatureTypes
 from PIL import Image, ImageDraw, ImageFont
-
+import requests
+from io import BytesIO
+import requests
+import json
+import base64
+import os
 
 le_gender = LabelEncoder()
 le_item = LabelEncoder()
@@ -109,36 +114,60 @@ from google.oauth2 import service_account
 # Replace with your Azure Computer Vision API credentials
 subscription_key = '778c7e6500f547cc9e57c09018ad06eb'
 endpoint = 'https://testdemo2.cognitiveservices.azure.com/'
+def get_image_base64_encoding(image_path: str) -> str:
+    with open(image_path, 'rb') as file:
+        image_data = file.read()
+        image_extension = os.path.splitext(image_path)[1]
+        base64_encoded = base64.b64encode(image_data).decode('utf-8')
+    return f"data:image/{image_extension[1:]};base64,{base64_encoded}"
 # Create a client
 client = ComputerVisionClient(endpoint, CognitiveServicesCredentials(subscription_key))
-
+def asticaAPI(endpoint, payload, timeout):
+    response = requests.post(endpoint, data=json.dumps(payload), timeout=timeout, headers={ 'Content-Type': 'application/json', })
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {'status': 'error', 'error': 'Failed to connect to the API.'}
 # Set up the Streamlit app
 uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
-
 if uploaded_image:
-    if st.button("Label Image"):
-        # Convert the bytes object to a file-like object
-        image_stream = io.BytesIO(uploaded_image.read())
+    if st.button("Describe the uploaded image"):
+        # Read the uploaded image as bytes
+        image_bytes = uploaded_image.read()
 
-        # Analyze the image and get object tags
-        results = client.analyze_image_in_stream(image_stream, visual_features=[VisualFeatureTypes.objects])
+        # Encode the image as base64
+        asticaAPI_input = base64.b64encode(image_bytes).decode('utf-8')
 
-        # Get the object tags
-        object_tags = results.objects
+        # Display the loader
+        with st.spinner('Analyzing...'):
+            # API configurations
+            asticaAPI_key = '66B65C6D-CC58-4E17-89B6-36808A6082EAF4CAA167-1D86-4FEF-8B3C-C946E3B7D61E'  # visit https://astica.ai
+            asticaAPI_timeout = 100  # in seconds. "gpt" or "gpt_detailed" require increased timeouts
+            asticaAPI_endpoint = 'https://vision.astica.ai/describe'
+            asticaAPI_modelVersion = '2.0_full'  # '1.0_full', '2.0_full', or '2.1_full'
 
-        # Create a PIL Image object from the uploaded image
-        image = Image.open(image_stream)
+            # vision parameters:  https://astica.ai/vision/documentation/#parameters
+            asticaAPI_visionParams = 'gpt_detailed,describe_all'  # comma separated, defaults to "all".
+            asticaAPI_gpt_prompt = 'In Vietnamese, describe the images about layout, positions, colors, impression, as a professional designer.'
+            asticaAPI_prompt_length = '400'  # number of words in GPT response
+            # Define payload dictionary
+            asticaAPI_payload = {
+                'tkn': asticaAPI_key,
+                'modelVersion': asticaAPI_modelVersion,
+                'visionParams': asticaAPI_visionParams,
+                'gpt_prompt': asticaAPI_gpt_prompt,
+                'input': asticaAPI_input,
+            }
 
-        # Load the "arial.ttf" font for text drawing
-        font_size = 50  # Adjust the font size as needed
-        font = ImageFont.truetype("arial.ttf", font_size)
+            # call API function and store result
+            asticaAPI_result = asticaAPI(asticaAPI_endpoint, asticaAPI_payload, asticaAPI_timeout)
 
-        # Draw the bounding box for each object and label with the specified font
-        draw = ImageDraw.Draw(image)
-        for obj in object_tags:
-            bounding_box = obj.rectangle
-            draw.rectangle([bounding_box.x, bounding_box.y, bounding_box.x + bounding_box.w, bounding_box.y + bounding_box.h], outline='red')
-            draw.text((bounding_box.x, bounding_box.y), obj.object_property, fill='black', font=font)
+        # Remove the loader
+        st.spinner(None)
 
-        # Display the image with the bounding boxes and labels overlaid
-        st.image(image, use_column_width=True)
+        # print API output
+        if 'caption_GPTS' in asticaAPI_result:
+            st.markdown('Description:' + asticaAPI_result['caption_GPTS'])
+        else:
+            st.markdown('No description available.')
+        st.image(uploaded_image, use_column_width=True)
