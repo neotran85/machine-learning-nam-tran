@@ -103,7 +103,7 @@ def showBoxPlots(data):
     st.pyplot(fig)
   
 # DEMO
-st.title("AI Image Labeling")
+st.title("AI Image Description")
 
 import io
 from google.cloud import vision
