@@ -167,7 +167,7 @@ if uploaded_image:
 
         # print API output
         if 'caption_GPTS' in asticaAPI_result:
-            st.markdown('Description: ' + asticaAPI_result['caption_GPTS'])
+            st.markdown('Mô Tả: ' + asticaAPI_result['caption_GPTS'])
         else:
-            st.markdown('No description available.')
+            st.markdown('Không thể mô tả hình ảnh này.')
         st.image(uploaded_image, use_column_width=True)
