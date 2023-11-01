@@ -6,8 +6,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 # Import AutoML stuff
-import pycaret
+import h2o
+from h2o.automl import H2OAutoML
+from sklearn.model_selection import train_test_split
 
+h2o.init()
 st.title('AutoML Demo for every dataset')
 st.write('This is a demo for AutoML on every dataset. You can upload your own dataset and see the results of AutoML on it. The results are shown in the sidebar on the left. You can also download the results as a csv file.')
 
@@ -17,14 +20,15 @@ st.write('Upload your dataset as a csv file (only). The first row should contain
 uploaded_file = st.file_uploader("Choose a file", type="csv")
 
 
-
 # Step 2: Choose the target column. 
 # Define a function for step 2 named step2() and call it in step 1
 target_column = None
 def step2():
     st.header('Step 2: Choose the target column')   
     st.write('Choose the target column of your dataset. The target column should be the last column of your dataset.')
-    target_column = st.selectbox('Which column is the target column?', data.columns)
+    default_target_column = data.columns[-1]
+    target_column = st.selectbox('Which column is the target column?', data.columns, index=data.columns.get_loc(default_target_column))
+    return target_column
 
 # Show Heatmap of all columns to see missing values
 def showHeatmapOfMissingData():
@@ -73,28 +77,23 @@ def step3():
 
 # Step 4: AutoML building models
 def step4():
-# Create a PyCaret experiment
-    session_id = 123
-    exp = pycaret.setup(data=data, target=target_column, problem_type='classification', session_id=session_id)
-    best_model = pycaret.compare_models()
-
-    # Tune the best model
-    best_tuned_model = pycaret.tune_model(best_model)
-
-    # Plot the feature importance of the best tuned model
-    st.pyplot(pycaret.plot_model(best_tuned_model, plot='feature'))
-
-    # Plot the partial dependence plots of the best tuned model
-    st.pyplot(pycaret.plot_model(best_tuned_model, plot='pdp'))
-
-    # Plot the SHAP values of the best tuned model
-    st.pyplot(pycaret.plot_model(best_tuned_model, plot='shap'))
-
+    st.header('Step 4: AutoML building models')
+    # Split the data into train and test sets
+    h2o_data = h2o.H2OFrame(data)
+    train, test = h2o_data.split_frame(ratios=[0.7], seed=42)
+    aml = H2OAutoML(max_runtime_secs=180)  # Maximum runtime in seconds
+    aml.train(x=h2o_data.columns, y=target_column, training_frame=train)
+    lb = aml.leaderboard
+    # Get the top 10 models
+    st.write('Top 10 Models')
+    st.write(lb.head(rows=10))
 
 if uploaded_file is not None:
     data = pd.read_csv(uploaded_file)
     st.write(data.head())
     st.write('The column names are: ' + ', '.join(data.columns))
-    step2()
-    step3()
-    step4()
+    target_column = step2()
+    if(target_column is not None):
+        ## step3()
+        step4()
+    
