@@ -11,3 +11,4 @@ google-cloud
 seaborn
 google-cloud-vision
 azure-cognitiveservices-vision-computervision
+pycaret
