@@ -11,7 +11,7 @@ api_key = 'sk-XRJbmWtHE22TCSDCRiT8ZF5Pqt7qrhyxq6vyKkVlQhvq8kdC'
 # Initialize the Stability API client
 stability_api = client.StabilityInference(
     key=api_key,
-    upscale_engine="stable-diffusion-x4-latent-upscaler",
+    upscale_engine="esrgan-v1-x2plus",
     verbose=True,
 )
 
@@ -26,7 +26,7 @@ upscale_factor = st.radio(
 )
 
 # File uploader allows user to add their own image
-uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Choose an image (width and height < 1000px):", type=["png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
     # Open the image with PIL and convert to RGB
