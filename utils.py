@@ -100,10 +100,17 @@ def show_left_menu():
 
     # Define your project structure with titles
     folders = {
-        "Image Processing": [("image_remove_bg", "Remove Background Images"),
-                         ("ads_comparation", "Item 2")],
-        "Data Science": [("ads_comparation1", "Item 12"),
-                             ("ads_comparation1", "Item 22")]
+        "AI Image Processing": [("image_remove_bg", "Remove Background Images"),
+                                ("text_to_image", "Text To Image Generator"),
+                                ("enhance_image", "Image Enhancement"),
+                                ("scale_image", "Image Upscaler"),
+                                ("picture_description", "Picture Description"),
+                                ("adult_content_detection", "Adult Content Detection"),
+                                ("image_annotation", "Image Annotation")],
+        "Natural Language Processing": [("chatbot", "Chatbot"),
+                                        ("ads_comparation", "Item 222")],                 
+        "Data Science": [("ads_comparation1", "Item 112"),
+                         ("ads_comparation1", "Item 212")]
         # Add more folders and script-title tuples (without the .py extension)
     }
 
