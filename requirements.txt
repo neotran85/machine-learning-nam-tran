@@ -1,3 +1,4 @@
+rembg==2.0.51
 altair
 scikit-learn
 numpy
@@ -11,4 +12,3 @@ google-cloud
 seaborn
 google-cloud-vision
 azure-cognitiveservices-vision-computervision
-rembg
