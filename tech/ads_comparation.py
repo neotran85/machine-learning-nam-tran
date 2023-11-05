@@ -60,7 +60,7 @@ def get_image_base64(path):
     with open(path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode('utf-8')
 
-avatar_base64 = get_image_base64("avatar.png")
+avatar_base64 = get_image_base64("assets/avatar.png")
 
 # Applying the CSS style
 st.markdown(style, unsafe_allow_html=True)
