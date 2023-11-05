@@ -1,46 +1,47 @@
 import streamlit as st
-import tensorflow as tf
+import requests
+import base64
 from PIL import Image
-import numpy as np
 import io
+import json
 
-# Load your pre-trained model (this is just a placeholder path)
-MODEL_PATH = 'nsfw_mobilenet2.224x224.h5'
-model = tf.keras.models.load_model(MODEL_PATH)
+st.title("NSFW Image Check")
 
-# Define the image size that your model expects
-IMG_SIZE = (224, 224) # for example
+# Assuming the API key and URL are already set correctly.
+api_key = "m3jRLKB54RHAcA4JsEKjaGGi4VGDdKQC8Si3cRFyzpzV4Cv4DAvxl8RJF58l"  # Replace with your actual API key
+api_url = "https://stablediffusionapi.com/api/v3/nsfw_image_check"
 
-# NSFW check function
-def check_image_for_nsfw(image_data):
-    # Prepare the image for the model
-    image = Image.open(io.BytesIO(image_data))
-    image = image.resize(IMG_SIZE)
-    image_array = np.array(image) / 255.0  # Normalize to [0, 1] if that's what your model expects
+# This function encodes the uploaded file into a base64 string.
+def img_to_base64(uploaded_file):
+    img = Image.open(uploaded_file)
+    buffered = io.BytesIO()
+    img_format = 'PNG' if uploaded_file.type == 'image/png' else 'JPEG'
+    img.save(buffered, format=img_format)
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return img_str
 
-    # Your model makes a prediction here
-    prediction = model.predict(np.array([image_array]))[0]
+# This function sends the request to the API.
+def check_image(base64_str):
+    payload = json.dumps({
+        "key": api_key,
+        "init_image": base64_str  # Send the base64 string instead of the path
+    })
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    response = requests.post(api_url, headers=headers, data=payload)
+    return response.json()
 
-    # Assuming your model outputs a single probability for NSFW content
-    is_nsfw = prediction[0] > 0.5  # This threshold might be different for your model
-    return is_nsfw
+# Streamlit file uploader.
+uploaded_file = st.file_uploader("Upload an image for NSFW check", type=["jpg", "jpeg", "png"])
 
-# Streamlit app interface
-st.title("NSFW Content Checker")
-
-uploaded_file = st.file_uploader("Upload an image file", type=['jpg', 'png', 'jpeg'])
-
+# When a file is uploaded, convert it and send the check request.
 if uploaded_file is not None:
-    # To read file as bytes:
-    bytes_data = uploaded_file.read()
-    
-    # Display the uploaded image
-    st.image(bytes_data, caption='Uploaded Image', use_column_width=True)
-    
-    # Check the image for NSFW content immediately after uploading
-    if check_image_for_nsfw(bytes_data):
-        st.error("NSFW content detected!")
+    base64_str = img_to_base64(uploaded_file)
+    result = check_image(base64_str)
+    st.write(result)
+    # Handle the response.
+    if result.get("has_nsfw_concept", [False])[0]:
+        st.error("The image is NSFW.")
     else:
-        st.success("No NSFW content detected.")
-else:
-    st.write("No image uploaded yet. Please upload an image to check.")
+        st.success("The image is safe.")

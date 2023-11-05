@@ -1,62 +1,52 @@
 import streamlit as st
 import requests
-from PIL import Image
-from io import BytesIO
+import os
+import base64
 
-# Function to send request to Stable Diffusion API
-def get_generated_image(api_key, prompt):
-    url = "https://stablediffusionapi.com/api/v3/text2img"
+# Set up your API key and endpoint
+engine_id = "stable-diffusion-xl-1024-v1-0"
+api_host = os.getenv('API_HOST', 'https://api.stability.ai')
+api_key = "sk-XRJbmWtHE22TCSDCRiT8ZF5Pqt7qrhyxq6vyKkVlQhvq8kdC"
 
-    payload = {
-        "key": api_key,
-        "prompt": prompt,
-        "negative_prompt": "",
-        "width": "512",
-        "height": "512",
-        "samples": "1",
-        "num_inference_steps": "22",
-        "safety_checker": "yes",
-        "enhance_prompt": "yes",
-        "seed": None,
-        "guidance_scale": 7.5,
-        "multi_lingual": "no",
-        "panorama": "no",
-        "self_attention": "no",
-        "upscale": "yes",
-        "embeddings_model": None,
-        "webhook": None,
-        "track_id": None
-    }
+if api_key is None:
+    raise Exception("Missing Stability API key.")
 
-    headers = {
-        'Content-Type': 'application/json'
-    }
+# Streamlit web app interface
+st.title('AI Image Generator')
 
-    response = requests.post(url, headers=headers, json=payload)
-    return response.json()
+prompt = st.text_input('Enter a prompt for the AI to generate an image:', 'A far future world where humans have colonized the colorful galaxy.')
+generate_button = st.button('Generate Image')
 
-# Streamlit UI
-st.title("AI Image Generator")
+if generate_button:
+    with st.spinner('Please wait... Generating image.'):
+        response = requests.post(
+            f"{api_host}/v1/generation/{engine_id}/text-to-image",
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            },
+            json={
+                "text_prompts": [
+                    {
+                        "text": prompt
+                    }
+                ],
+                "cfg_scale": 7,
+                "height": 1024,
+                "width": 1024,
+                "samples": 1,
+                "steps": 30,
+            },
+        )
 
-# User inputs
-api_key = "abj99slmdtaeLhnFwHJzSJDbia5RiB4TFpMSECy9xSU8x4kzNPEGJlS3ayQp"
-prompt = st.text_input("Enter a prompt for the image:", value="A cute, happy dog with 2 wings, flying in a blue sky")
-# Button to generate image
-if st.button("Generate Image"):
-    if api_key and prompt:
-        with st.spinner("Generating image..."):
-            result = get_generated_image(api_key, prompt)
-            st.write(result)
-            # Check if the request was successful
-            if result["status"] == "success":
-                # Get the image URL
-                image_url = result["output"][0]
-
-                # Display the image
-                response = requests.get(image_url)
-                img = Image.open(BytesIO(response.content))
-                st.image(img, caption="Generated Image", use_column_width=True)
-            else:
-                st.error("So sorry. Failed to generate image. Please try again.")
-    else:
-        st.warning("Please enter an API key and a prompt.")
+        if response.status_code == 200:
+            data = response.json()
+            for i, image in enumerate(data["artifacts"]):
+                # Decode the base64 string into binary data
+                image_data = base64.b64decode(image["base64"])
+                
+                # Display the image in the Streamlit app
+                st.image(image_data, caption=f'Generated Image {i+1}', use_column_width=True)
+        else:
+            st.error("Error with image generation request: " + str(response.text))
