@@ -2,11 +2,12 @@ import streamlit as st
 import requests
 import os
 import base64
+import consts
 
 # Set up your API key and endpoint
 engine_id = "stable-diffusion-xl-1024-v1-0"
 api_host = os.getenv('API_HOST', 'https://api.stability.ai')
-api_key = "sk-XRJbmWtHE22TCSDCRiT8ZF5Pqt7qrhyxq6vyKkVlQhvq8kdC"
+api_key = consts.API_KEY_STABILITY_AI
 
 if api_key is None:
     raise Exception("Missing Stability API key.")

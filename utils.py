@@ -1,17 +1,3 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022)
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import inspect
 import textwrap
 import base64
@@ -92,21 +78,19 @@ def run_script(script_name):
         sys.modules[script_name] = module
         spec.loader.exec_module(module)
 
-import streamlit as st
-
 def show_left_menu():
     # Set page config
     st.set_page_config(page_title="My Portfolio", layout="wide")
 
     # Define your project structure with titles
     folders = {
-        "AI Image Processing": [("image_remove_bg", "Remove Background Images"),
-                                ("text_to_image", "Text To Image Generator"),
+        "AI Image Processing": [("text_to_image", "Text To Image Generator"),
                                 ("enhance_image", "Image Enhancement"),
                                 ("upscale_image", "Image Upscaler"),
                                 ("picture_description", "Picture Description"),
                                 ("adult_content_detection", "Adult Content Detection"),
-                                ("image_annotation", "Image Annotation")],
+                                ("image_annotation", "Image Annotation"),
+                                ("image_remove_bg", "Remove Background Images")],
         "Natural Language Processing": [("chatbot", "Chatbot"),
                                         ("ads_comparation", "Item 222")],                 
         "Data Science": [("ads_comparation1", "Item 112"),

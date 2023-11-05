@@ -4,11 +4,11 @@ from stability_sdk import client
 from PIL import Image
 import io
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
-
+import consts
 # Initialize the Stability AI client
 stability_api = client.StabilityInference(
-    key='sk-XRJbmWtHE22TCSDCRiT8ZF5Pqt7qrhyxq6vyKkVlQhvq8kdC',  # Replace with your Stability API key
-    upscale_engine="esrgan-v1-x2plus",  # Replace with your desired upscale engine
+    key=consts.API_KEY_STABILITY_AI,  
+    upscale_engine="esrgan-v1-x2plus",  
     verbose=True,
 )
 
@@ -16,7 +16,7 @@ stability_api = client.StabilityInference(
 st.title('Image Enhancement')
 
 # File uploader allows user to add their own image
-uploaded_file = st.file_uploader("Upload an image to upscale", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Upload an image to enhance", type=["png", "jpg", "jpeg"])
 
 # Check if a file has been uploaded
 if uploaded_file is not None:
@@ -33,7 +33,7 @@ if uploaded_file is not None:
     with st.spinner('Enhancing image...'):
         responses = stability_api.upscale(
             init_image=original_image,
-            steps=200,
+            steps=100,
             width=2048
         )
 

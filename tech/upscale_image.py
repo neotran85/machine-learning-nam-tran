@@ -4,13 +4,11 @@ from PIL import Image
 from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 import io
-
-# Replace with your API key
-api_key = 'sk-XRJbmWtHE22TCSDCRiT8ZF5Pqt7qrhyxq6vyKkVlQhvq8kdC' 
+import consts
 
 # Initialize the Stability API client
 stability_api = client.StabilityInference(
-    key=api_key,
+    key=consts.API_KEY_STABILITY_AI,
     upscale_engine="esrgan-v1-x2plus",
     verbose=True,
 )
@@ -43,32 +41,33 @@ if uploaded_file is not None:
     display_img = img.resize(display_size)
     st.image(display_img, caption='Original Image')
 
-    # Call the upscale method from the Stability SDK
-    answers = stability_api.upscale(
-        init_image=img,
-        width=upscaled_width, 
-        # Other parameters can be added if necessary
-    )
+    with st.spinner('Upscaling image...'):
+        # Call the upscale method from the Stability SDK
+        answers = stability_api.upscale(
+            init_image=img,
+            width=upscaled_width, 
+            # Other parameters can be added if necessary
+        )
 
-    # Process the response and display the upscaled image
-    for resp in answers:
-        for artifact in resp.artifacts:
-            if artifact.finish_reason == generation.FILTER:
-                st.error("Your request activated the API's safety filters and could not be processed.")
-            elif artifact.type == generation.ARTIFACT_IMAGE:
-                # Convert binary data to PIL Image
-                upscaled_img = Image.open(io.BytesIO(artifact.binary))
+        # Process the response and display the upscaled image
+        for resp in answers:
+            for artifact in resp.artifacts:
+                if artifact.finish_reason == generation.FILTER:
+                    st.error("Your request activated the API's safety filters and could not be processed.")
+                elif artifact.type == generation.ARTIFACT_IMAGE:
+                    # Convert binary data to PIL Image
+                    upscaled_img = Image.open(io.BytesIO(artifact.binary))
 
-                # Use Streamlit to display the upscaled image
-                st.image(upscaled_img, caption=f'Upscaled Image ({upscale_factor})')
+                    # Use Streamlit to display the upscaled image
+                    st.image(upscaled_img, caption=f'Upscaled Image ({upscale_factor})')
 
-                # If you also want to allow users to download the upscaled image:
-                buf = io.BytesIO()
-                upscaled_img.save(buf, format='PNG')
-                byte_im = buf.getvalue()
-                st.download_button(
-                    label="Download Upscaled Image",
-                    data=byte_im,
-                    file_name=f"upscaled_image_{upscale_factor}.png",
-                    mime="image/png"
-                )
+                    # If you also want to allow users to download the upscaled image:
+                    buf = io.BytesIO()
+                    upscaled_img.save(buf, format='PNG')
+                    byte_im = buf.getvalue()
+                    st.download_button(
+                        label="Download Upscaled Image",
+                        data=byte_im,
+                        file_name=f"upscaled_image_{upscale_factor}.png",
+                        mime="image/png"
+                    )
