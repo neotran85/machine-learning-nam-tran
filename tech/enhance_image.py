@@ -20,28 +20,36 @@ st.title('Image Enhancement')
 
 # File uploader allows user to add their own image
 uploaded_file = st.file_uploader("Upload an image to enhance", type=["png", "jpg", "jpeg"])
-
+original_image_path, upscaled_image_path = '',''
+max_size = 2048
 # Check if a file has been uploaded
 if uploaded_file is not None:
     # Convert the file to an image
     original_image = Image.open(uploaded_file).convert("RGB")
+    
+    # Calculate new dimensions while maintaining aspect ratio
+    original_width, original_height = original_image.size
+    
     # Get the current time in milliseconds
     timestamp = int(round(time.time() * 1000))
 
     # Save the original image to a temporary path with the timestamp
     original_image_path = f"original_image_{timestamp}.png"
-    original_image.save(original_image_path)
-
-    # Display the original image
-    # st.image(original_image, caption='Original Image', use_column_width=True)
 
     # Upscale the image using Stability SDK
     with st.spinner('Enhancing image...'):
-        responses = stability_api.upscale(
-            init_image=original_image,
-            steps=100,
-            width=2048
-        )
+        if original_width > original_height:
+                responses = stability_api.upscale(
+                init_image=original_image,
+                steps=100,
+                width=max_size,
+            )
+        else:
+            responses = stability_api.upscale(
+                init_image=original_image,
+                steps=100,
+                height=max_size, 
+            )
 
         # Retrieve the upscaled image
         upscaled_image = None
@@ -54,7 +62,8 @@ if uploaded_file is not None:
             # Save the upscaled image temporarily to disk
             upscaled_image_path = f"upscaled_image_{timestamp}.png"
             upscaled_image.save(upscaled_image_path)
-            # Show comparison slider
+            original_image.save(original_image_path)
+
             image_comparison(
                 img1=original_image_path,
                 img2=upscaled_image_path,
@@ -63,8 +72,10 @@ if uploaded_file is not None:
             )
         else:
             st.error('Unable to upscale the image.')
-        # After displaying the images, delete the temporary files
-        if os.path.exists(original_image_path):
-            os.remove(original_image_path)
-        if os.path.exists(upscaled_image_path):
-            os.remove(upscaled_image_path)
+    # After displaying the images, delete the temporary files
+    if os.path.exists(original_image_path):
+        os.remove(original_image_path)
+    if os.path.exists(upscaled_image_path):
+        os.remove(upscaled_image_path)
+
+
