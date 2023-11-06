@@ -35,8 +35,7 @@ if uploaded_image:
         asticaAPI_endpoint = 'https://vision.astica.ai/describe'
         asticaAPI_modelVersion = '2.1_full'  # '1.0_full', '2.0_full', or '2.1_full'
 
-        # vision parameters:  https://astica.ai/vision/documentation/#parameters
-        asticaAPI_visionParams = 'gpt_detailed,describe_all,text_read,faces,objects,color'  # comma separated, defaults to "all".
+        asticaAPI_visionParams = 'gpt_detailed,describe_all,text_read,faces,objects,color,tags'  # comma separated, defaults to "all".
         asticaAPI_gpt_prompt = 'Describe about its deep meaning, messages, context, lessons, objects, predictions and main characters in detail.'
         asticaAPI_prompt_length = '1000'  # number of words in GPT response
         # Define payload dictionary
