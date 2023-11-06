@@ -87,7 +87,7 @@ def run_script(script_name):
 def show_left_menu():
     # Define your project structure with titles
     folders = {
-        "AI-powered Image Processing": [("text_to_image", "Text To Image Generator"),
+        "AI-powered Image Processing": [("image_generate_from_text", "Text To Image Generator"),
                                 ("image_enhance", "Image Enhancement"),
                                 ("image_upscale", "Image Upscaler"),
                                 ("image_explanation", "Picture Explanation"),

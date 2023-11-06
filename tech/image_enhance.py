@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_image_comparison import image_comparison
 from stability_sdk import client
-from PIL import Image
+from PIL import Image, ImageFilter, ImageEnhance
 import io
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 import consts
@@ -41,13 +41,13 @@ if uploaded_file is not None:
         if original_width > original_height:
                 responses = stability_api.upscale(
                 init_image=original_image,
-                steps=100,
+                steps=60,
                 width=max_size,
             )
         else:
             responses = stability_api.upscale(
                 init_image=original_image,
-                steps=100,
+                steps=60,
                 height=max_size, 
             )
 
@@ -59,16 +59,28 @@ if uploaded_file is not None:
                     upscaled_image = Image.open(io.BytesIO(artifact.binary))
 
         if upscaled_image:
-            # Save the upscaled image temporarily to disk
-            upscaled_image_path = f"upscaled_image_{timestamp}.png"
-            upscaled_image.save(upscaled_image_path)
+            # Apply sharpening filter
+            sharp_enhancer = ImageEnhance.Sharpness(upscaled_image)
+            sharpened_image = sharp_enhancer.enhance(1.7)
+
+            # Enhance color
+            color_enhancer = ImageEnhance.Color(sharpened_image)
+            color_enhanced_image = color_enhancer.enhance(1.5)  
+
+            # Enhance brightness
+            brightness_enhancer = ImageEnhance.Brightness(color_enhanced_image)
+            enhanced_image = brightness_enhancer.enhance(1.025) 
+
+            # Save the enhanced image temporarily to disk
+            enhanced_image_path = f"enhanced_image_{timestamp}.png"
+            enhanced_image.save(enhanced_image_path)
             original_image.save(original_image_path)
 
             image_comparison(
                 img1=original_image_path,
-                img2=upscaled_image_path,
-                label1='Before',
-                label2='After',
+                img2=enhanced_image_path,
+                label1='Original',
+                label2='Enhanced',
             )
         else:
             st.error('Unable to upscale the image.')
