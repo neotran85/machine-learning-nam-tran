@@ -5,6 +5,12 @@ import streamlit as st
 import os
 import importlib.util
 import sys
+import consts
+
+# delete out files
+def delete_out_file(path):
+    if os.path.exists(path):
+        os.remove(path)
 
 def show_code(demo):
     """Showing the code of the demo."""
@@ -79,9 +85,6 @@ def run_script(script_name):
         spec.loader.exec_module(module)
 
 def show_left_menu():
-    # Set page config
-    st.set_page_config(page_title="My Portfolio", layout="wide")
-
     # Define your project structure with titles
     folders = {
         "AI-powered Image Processing": [("text_to_image", "Text To Image Generator"),
