@@ -20,7 +20,7 @@ st.title('AI-powered Image Enhancement')
 
 # File uploader allows user to add their own image
 uploaded_file = st.file_uploader("Please upload an image to enhance", type=["png", "jpg", "jpeg"])
-original_image_path, upscaled_image_path = '',''
+original_image_path, enhanced_image_path = '',''
 max_size = 2048
 # Check if a file has been uploaded
 if uploaded_file is not None:
@@ -65,7 +65,7 @@ if uploaded_file is not None:
 
             # Enhance color
             color_enhancer = ImageEnhance.Color(sharpened_image)
-            color_enhanced_image = color_enhancer.enhance(1.5)  
+            color_enhanced_image = color_enhancer.enhance(1.2)  
 
             # Enhance brightness
             brightness_enhancer = ImageEnhance.Brightness(color_enhanced_image)
@@ -79,15 +79,15 @@ if uploaded_file is not None:
             image_comparison(
                 img1=original_image_path,
                 img2=enhanced_image_path,
-                label1='Original',
-                label2='Enhanced',
+                label1='Before',
+                label2='After',
             )
         else:
             st.error('Unable to upscale the image.')
     # After displaying the images, delete the temporary files
     if os.path.exists(original_image_path):
         os.remove(original_image_path)
-    if os.path.exists(upscaled_image_path):
-        os.remove(upscaled_image_path)
+    if os.path.exists(enhanced_image_path):
+        os.remove(enhanced_image_path)
 
 
