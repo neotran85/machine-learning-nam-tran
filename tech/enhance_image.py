@@ -16,10 +16,10 @@ stability_api = client.StabilityInference(
 )
 
 # Title for the Streamlit app
-st.title('Image Enhancement')
+st.title('AI-powered Image Enhancement')
 
 # File uploader allows user to add their own image
-uploaded_file = st.file_uploader("Upload an image to enhance", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Please upload an image to enhance", type=["png", "jpg", "jpeg"])
 original_image_path, upscaled_image_path = '',''
 max_size = 2048
 # Check if a file has been uploaded

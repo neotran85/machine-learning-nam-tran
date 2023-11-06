@@ -13,4 +13,6 @@ seaborn
 google-cloud-vision
 azure-cognitiveservices-vision-computervision
 stability_sdk
-
+yolov5
+torch
+cv2

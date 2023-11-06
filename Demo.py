@@ -1,5 +1,5 @@
 import streamlit as st
-import utils
+import utilities
 
-utils.show_left_menu()
-utils.show_about_me()
+utilities.show_left_menu()
+utilities.show_about_me()

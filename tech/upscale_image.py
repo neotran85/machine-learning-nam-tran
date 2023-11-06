@@ -14,7 +14,7 @@ stability_api = client.StabilityInference(
 )
 
 # Streamlit interface
-st.title('Image Upscaler')
+st.title('AI-powered Image Upscaler')
 
 # Upscaling factor selection
 upscale_factor = st.radio(
@@ -24,7 +24,7 @@ upscale_factor = st.radio(
 )
 
 # File uploader allows user to add their own image
-uploaded_file = st.file_uploader("Choose an image (width and height < 1000px):", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Please choose an image (width and height < 1000px):", type=["png", "jpg", "jpeg"])
 
 if uploaded_file is not None:
     # Open the image with PIL and convert to RGB

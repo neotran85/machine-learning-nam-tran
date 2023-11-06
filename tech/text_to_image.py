@@ -13,9 +13,9 @@ if api_key is None:
     raise Exception("Missing Stability API key.")
 
 # Streamlit web app interface
-st.title('AI Image Generator')
+st.title('AI-powered Image Generator')
 
-prompt = st.text_input('Enter a prompt for the AI to generate an image:', 'A far future world where humans have colonized the colorful galaxy.')
+prompt = st.text_input('Please enter a prompt for the AI to generate an image:', 'A far future world where humans have colonized the colorful galaxy.')
 generate_button = st.button('Generate Image')
 
 if generate_button:

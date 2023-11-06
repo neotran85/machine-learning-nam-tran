@@ -7,7 +7,7 @@ from google.cloud import vision
 from google.oauth2 import service_account
 import consts
 
-st.title("AI Image Explanation")
+st.title("AI-powered Image Explanation")
 def get_image_base64_encoding(image_path: str) -> str:
     with open(image_path, 'rb') as file:
         image_data = file.read()
@@ -22,7 +22,7 @@ def asticaAPI(endpoint, payload, timeout):
     else:
         return {'status': 'error', 'error': 'Failed to connect to the API.'}
 # Set up the Streamlit app
-uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+uploaded_image = st.file_uploader("Please upload an image", type=["jpg", "jpeg", "png"])
 if uploaded_image:
     # Read the uploaded image as bytes
     image_bytes = uploaded_image.read()
