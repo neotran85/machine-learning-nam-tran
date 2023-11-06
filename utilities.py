@@ -88,10 +88,10 @@ def show_left_menu():
     # Define your project structure with titles
     folders = {
         "AI-powered Image Processing": [("text_to_image", "Text To Image Generator"),
-                                ("enhance_image", "Image Enhancement"),
-                                ("upscale_image", "Image Upscaler"),
-                                ("picture_explanation", "Picture Explanation"),
-                                ("images_annotation", "Video/Images Annotation"),
+                                ("image_enhance", "Image Enhancement"),
+                                ("image_upscale", "Image Upscaler"),
+                                ("image_explanation", "Picture Explanation"),
+                                ("image_annotation", "Video/Images Annotation"),
                                 ("image_remove_bg", "Remove Background Images"),
                                 ("adult_content_detection", "Adult Content Detection")],
         "Natural Language Processing": [("chatbot", "Chatbot"),
