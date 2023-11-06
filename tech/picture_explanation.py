@@ -30,15 +30,14 @@ if uploaded_image:
     # Display the loader
     with st.spinner('Analyzing the image...'):
         # API configurations
-        st.image(uploaded_image, width=300)
         asticaAPI_key = consts.API_KEY_ASTICA
         asticaAPI_timeout = 100
         asticaAPI_endpoint = 'https://vision.astica.ai/describe'
         asticaAPI_modelVersion = '2.1_full'  # '1.0_full', '2.0_full', or '2.1_full'
 
         # vision parameters:  https://astica.ai/vision/documentation/#parameters
-        asticaAPI_visionParams = 'gpt_detailed,describe_all,text_read,faces,objects,color,objects'  # comma separated, defaults to "all".
-        asticaAPI_gpt_prompt = 'Describe about its meaning, messages, context, lessons, objects and main characters in detail.'
+        asticaAPI_visionParams = 'gpt_detailed,describe_all,text_read,faces,objects,color'  # comma separated, defaults to "all".
+        asticaAPI_gpt_prompt = 'Describe about its deep meaning, messages, context, lessons, objects, predictions and main characters in detail.'
         asticaAPI_prompt_length = '1000'  # number of words in GPT response
         # Define payload dictionary
         asticaAPI_payload = {
@@ -56,3 +55,4 @@ if uploaded_image:
     else:
         st.markdown('The picture cannot be explained.')
     
+    st.image(uploaded_image)
