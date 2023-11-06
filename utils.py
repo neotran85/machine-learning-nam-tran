@@ -87,7 +87,7 @@ def show_left_menu():
         "AI Image Processing": [("text_to_image", "Text To Image Generator"),
                                 ("enhance_image", "Image Enhancement"),
                                 ("upscale_image", "Image Upscaler"),
-                                ("picture_description", "Picture Description"),
+                                ("picture_explanation", "Picture Explanation"),
                                 ("adult_content_detection", "Adult Content Detection"),
                                 ("image_annotation", "Image Annotation"),
                                 ("image_remove_bg", "Remove Background Images")],
