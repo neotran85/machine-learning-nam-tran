@@ -16,3 +16,4 @@ stability_sdk
 yolov5
 torch
 cv2
+ultralytics
