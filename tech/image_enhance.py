@@ -65,7 +65,7 @@ if uploaded_file is not None:
 
             # Enhance color
             color_enhancer = ImageEnhance.Color(sharpened_image)
-            color_enhanced_image = color_enhancer.enhance(1.2)  
+            color_enhanced_image = color_enhancer.enhance(1.3)  
 
             # Enhance brightness
             brightness_enhancer = ImageEnhance.Brightness(color_enhanced_image)
