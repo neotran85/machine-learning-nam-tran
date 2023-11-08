@@ -93,6 +93,7 @@ def show_left_menu():
                                 ("image_explanation", "Picture Explanation"),
                                 ("image_annotation", "Video/Images Annotation"),
                                 ("image_pose_detector", "Pose Detector"),
+                                ("image_emotion_detector", "Emotion Detector"),
                                 ("image_remove_bg", "Remove Background Images")],
         "Natural Language Processing": [("chatbot", "Chatbot"),
                                         ("ads_comparation", "Item 222")],                 
