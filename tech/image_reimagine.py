@@ -11,7 +11,38 @@ from PIL import Image
 from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 from torchvision.transforms import GaussianBlur
+import base64
+import requests
+import random
 
+def get_base64_of_image(image):
+    # Save the image to a BytesIO object
+    buffered = io.BytesIO()
+    image.save(buffered, format="PNG")
+    # Get the base64-encoded string
+    img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
+    return img_str
+
+def save_canvas_as_base64(image_data):
+    # Convert the image data to a PIL Image object
+    image = Image.fromarray(image_data.astype('uint8'), 'RGBA')
+
+    # Create a black background image with the same size as the canvas image
+    black_bg = Image.new('RGB', image.size, 'black')
+    
+    # Paste the image onto the black background
+    black_bg.paste(image, (0, 0), image)
+
+    # Instead of saving the image as a file, convert it to a base64 string
+    base64_string = get_base64_of_image(black_bg)
+
+    return base64_string
+
+# Function to convert image bytes to base64
+def get_image_base64(image_bytes):
+    base64_bytes = base64.b64encode(image_bytes)
+    base64_string = base64_bytes.decode('utf-8')
+    return base64_string
 
 # Initialize the Stability API client
 stability_api = client.StabilityInference(
@@ -27,54 +58,55 @@ def resize_to_multiple_of_64(image):
     resized_image = image.resize((new_width, new_height), Image.ADAPTIVE)
     return resized_image
 
-# Define the inpainting function using Stability SDK
-def inpaint_with_stability(prompt, init_image_path, mask_image_path):
-    init_image = Image.open(init_image_path)
-    mask_image = Image.open(mask_image_path)
-    # Feathering the edges of our mask generally helps provide a better result. Alternately, you can feather the mask in a suite like Photoshop or GIMP.
-    blur = GaussianBlur(11,20)
-    masked = blur(mask_image)
-
-    # Generate the image
-    answers = stability_api.generate(
-        prompt=prompt,
-        init_image=init_image,
-        mask_image=masked,
-        start_schedule=1,
-        seed=1, # If attempting to transform an image that was previously generated with our API,
-                    # initial images benefit from having their own distinct seed rather than using the seed of the original image generation.
-        steps=60, # Amount of inference steps performed on image generation. Defaults to 30.
-        cfg_scale=8.0, # Influences how strongly your generation is guided to match your prompt.
-                    # Setting this value higher increases the strength in which it tries to match your prompt.
-                    # Defaults to 7.0 if not specified.
-        width=1024, # Generation width, if not included defaults to 512 or 1024 depending on the engine.
-        height=1024, # Generation height, if not included defaults to 512 or 1024 depending on the engine.
-        sampler=generation.SAMPLER_K_DPMPP_SDE # Choose which sampler we want to denoise our generation with.
-                                                    # Defaults to k_lms if not specified. Clip Guidance only supports ancestral samplers.
-                                                    # (Available Samplers: ddim, plms, k_euler, k_euler_ancestral, k_heun, k_dpm_2, k_dpm_2_ancestral, k_dpmpp_2s_ancestral, k_lms, k_dpmpp_2m, k_dpmpp_sde)
-    )
-    # Iterate over the generated answers and return the image
-    for resp in answers:
-        for artifact in resp.artifacts:
-            if artifact.type == generation.ARTIFACT_IMAGE:
-                global img2
-                img2 = Image.open(io.BytesIO(artifact.binary))
-                img2.save("result.png") 
-                return img2
-    return None
-def save_canvas_as_png(image_data, filename):
-    # Convert the image data to a PIL Image object
-    image = Image.fromarray(image_data.astype('uint8'), 'RGBA')
-
-    # Create a white background image with the same size as the canvas image
-    white_bg = Image.new('RGB', image.size, 'white')
+def calculate_new_dimensions(width, height, max_dimension=1024):
+    # Determine the scaling factor, making sure not to scale up
+    scaling_factor = min(max_dimension / width, max_dimension / height, 1)
     
-    # Paste the image onto the white background
-    # Since the mode is 'RGBA', the alpha channel is used to blend the images
-    white_bg.paste(image, (0, 0), image)
+    # Calculate new dimensions based on the scaling factor
+    new_width = int(width * scaling_factor)
+    new_height = int(height * scaling_factor)
+    
+    return new_width, new_height
 
-    # Save the image with white background as a PNG file
-    white_bg.save(filename, 'PNG')
+# Define the inpainting function using Stability SDK
+def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, original_height, target_dimension=1024):
+    # Generate a random seed
+    random_seed = random.randint(0, 2**10 - 1)  # for a 32-bit signed integer
+     # Calculate new dimensions while maintaining aspect ratio
+    new_width, new_height = calculate_new_dimensions(original_width, original_height)
+    st.write(f"New width: {new_width}, new height: {new_height}")
+    url = "https://api.getimg.ai/v1/stable-diffusion/inpaint"
+    payload = {
+        "image": upload_file,
+        "mask_image": mask_file,
+        "model": "realistic-vision-v5-1-inpainting",
+        "prompt": prompt,
+        "negative_prompt": "bad, Disfigured, cartoon, blurry, nude",
+        "strength": 0.001,
+        "width": 512,
+        "height": 1024,
+        "steps": 80,
+        "seed": random_seed,
+        "output_format": "png"
+    }
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "authorization": f"Bearer {consts.API_KEY_GETIMG_AI}"
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        response_json = response.json()
+        image_base64 = response_json.get('image')  # Assuming the key is 'image'
+        if image_base64:
+            # Create the full data URI scheme string
+            data_url = f"data:image/png;base64,{image_base64}"
+            st.image(data_url)
+        else:
+            st.error("No image in response.")
+    else:
+        st.error("Failed to get a successful response.")
+        st.write(response.text)
 
 # Set up the streamlit app
 st.title("Image Masking App")
@@ -82,6 +114,11 @@ st.title("Image Masking App")
 # File uploader
 uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
 if uploaded_file is not None:
+    # To read as bytes
+    bytes_data = uploaded_file.getvalue()
+    # Get base64 string
+    upload_file_base64_string = get_image_base64(bytes_data)
+
     original_image = Image.open(uploaded_file).convert("RGB")
     original_image = resize_to_multiple_of_64(original_image)
     img_array = np.array(original_image)
@@ -89,16 +126,16 @@ if uploaded_file is not None:
     original_image.save("original.png")
     # Set up canvas properties
     stroke_width = st.slider("Stroke width: ", 1, 50, 3)
-    stroke_color = st.color_picker("Stroke color: ")
-    bg_color = st.color_picker("Background color: ", "#ffffff")
-    drawing_mode = st.selectbox(
-        "Drawing tool:", ("freedraw", "line", "rect", "circle", "transform")
-    )
-    realtime_update = st.checkbox("Update in realtime", True)
+    # stroke_color is white at beginning
+    stroke_color = "#ffffff"
+    #bg_color is black at beginning
+    bg_color = "#000000"
+    drawing_mode = "freedraw"
+    realtime_update = True
 
     # Create a canvas component
     canvas_result = st_canvas(
-        fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
+        fill_color="rgba(255, 255, 255, 1)",  # Fixed fill color with some opacity
         stroke_width=stroke_width,
         stroke_color=stroke_color,
         background_color=bg_color,
@@ -114,8 +151,10 @@ if uploaded_file is not None:
     if st.button('Save Canvas'):
         # Check if there is image data from the canvas
         if canvas_result.image_data is not None:
-            save_canvas_as_png(canvas_result.image_data, "canvas.png")
-            result = inpaint_with_stability("make it nicer and beautiful", "original.png", "canvas.png")
-            st.image(result, caption='Result', use_column_width=True)
+            # Get the width and height of the image
+            image = Image.open(uploaded_file)
+            width, height = image.size
+            canvas_base64_string = save_canvas_as_base64(canvas_result.image_data)
+            result = inpaint_with_getimg_ai("Christmas, beautiful, impressive room", upload_file_base64_string, canvas_base64_string, width, height)
 
         
