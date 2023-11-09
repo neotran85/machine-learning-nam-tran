@@ -2,15 +2,10 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 import numpy as np
-import cv2
 import consts
-import tempfile
-import os
 import io
 from PIL import Image
-from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
-from torchvision.transforms import GaussianBlur
 import base64
 import requests
 import random
@@ -44,12 +39,6 @@ def get_image_base64(image_bytes):
     base64_string = base64_bytes.decode('utf-8')
     return base64_string
 
-# Initialize the Stability API client
-stability_api = client.StabilityInference(
-    key=consts.API_KEY_STABILITY_AI,
-    verbose=True, # Print debug messages.
-    engine="stable-diffusion-xl-1024-v1-0", # Set the engine to use for generation.
-)
 def resize_to_multiple_of_64(image):
     # Calculate the new dimensions, rounding down to the nearest multiple of 64
     new_width = (image.width // 64) * 64
@@ -59,13 +48,22 @@ def resize_to_multiple_of_64(image):
     return resized_image
 
 def calculate_new_dimensions(width, height, max_dimension=1024):
-    # Determine the scaling factor, making sure not to scale up
-    scaling_factor = min(max_dimension / width, max_dimension / height, 1)
-    
+    # Determine whether to scale based on width or height by finding out which dimension is larger
+    if width > height:
+        # Calculate scaling factor for width
+        scaling_factor = max_dimension / width
+    else:
+        # Calculate scaling factor for height
+        scaling_factor = max_dimension / height
     # Calculate new dimensions based on the scaling factor
     new_width = int(width * scaling_factor)
     new_height = int(height * scaling_factor)
     
+    # Ensure that at least one dimension is exactly 1024 pixels
+    if new_width > new_height:
+        new_width = max_dimension
+    else:
+        new_height = max_dimension
     return new_width, new_height
 
 # Define the inpainting function using Stability SDK
