@@ -107,7 +107,7 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, origi
     return None
 
 # Set up the streamlit app
-st.title("Image Masking App")
+st.title("Image Inpainting")
 
 # File uploader
 uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
@@ -147,17 +147,18 @@ if uploaded_file is not None:
     prompt = st.text_input("Enter a prompt about what you would like to inpaint:", "Christmas, beautiful, impressive, fancy")
     # When the user is done with the drawing and a save button is clicked
     if st.button('Inpaint the image'):
-        # Check if there is image data from the canvas
-        if canvas_result.image_data is not None:
-            # Get the width and height of the image
-            image = Image.open(uploaded_file)
-            width, height = image.size
-            canvas_base64_string = save_canvas_as_base64(canvas_result.image_data)
-            result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, width, height)
-            if result:
-                st.image(result, use_column_width=True)
-            else:
-                st.error("The picture cannot be inpainted. So sorry, please try again.")
+        with st.spinner("Please wait. Inpainting..."):
+            # Check if there is image data from the canvas
+            if canvas_result.image_data is not None:
+                # Get the width and height of the image
+                image = Image.open(uploaded_file)
+                width, height = image.size
+                canvas_base64_string = save_canvas_as_base64(canvas_result.image_data)
+                result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, width, height)
+                if result:
+                    st.image(result, use_column_width=True)
+                else:
+                    st.error("The picture cannot be inpainted. So sorry, please try again.")
 
 
         
