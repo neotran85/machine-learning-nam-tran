@@ -5,8 +5,8 @@ import numpy as np
 import cv2
 
 st.title("Emotion Detector")
-
-img_file_buffer = st.camera_input("Take a snapshot and analyze your emotions")
+with st.spinner("Loading camera..."):
+    img_file_buffer = st.camera_input("Take a snapshot and analyze your emotions")
 
 if img_file_buffer is not None:
     # Convert the buffer to a PIL Image
@@ -37,4 +37,5 @@ if img_file_buffer is not None:
         st.image(image_with_detections, caption='Processed Image', use_column_width=True)
 
     except Exception as e:
+        st.write("Some error occurred. Please clear the photo and try to take another snapshot again.")
         st.error(f"Error in processing the image: {e}")

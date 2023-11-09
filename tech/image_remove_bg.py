@@ -4,7 +4,6 @@ from PIL import Image
 from io import BytesIO
 import base64
 
-
 st.write("## Remove background from your picture")
 st.write("Quickly and effortlessly separate the subject from the background with AI-powered tool.")
 

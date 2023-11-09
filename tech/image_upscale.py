@@ -9,7 +9,8 @@ import consts
 # Initialize the Stability API client
 stability_api = client.StabilityInference(
     key=consts.API_KEY_STABILITY_AI,
-    upscale_engine="esrgan-v1-x2plus",
+    upscale_engine="esrgan-v1-x2plus", 
+    # upscale_engine="stable-diffusion-x4-latent-upscaler",  
     verbose=True,
 )
 

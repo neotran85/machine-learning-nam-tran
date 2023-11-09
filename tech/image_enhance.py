@@ -1,7 +1,7 @@
 import streamlit as st
 from streamlit_image_comparison import image_comparison
 from stability_sdk import client
-from PIL import Image, ImageFilter, ImageEnhance
+from PIL import Image, ImageEnhance
 import io
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 import consts
@@ -11,7 +11,8 @@ import os
 # Initialize the Stability AI client
 stability_api = client.StabilityInference(
     key=consts.API_KEY_STABILITY_AI,  
-    upscale_engine="esrgan-v1-x2plus",  
+    upscale_engine="esrgan-v1-x2plus", 
+    # upscale_engine="stable-diffusion-x4-latent-upscaler",  
     verbose=True,
 )
 
