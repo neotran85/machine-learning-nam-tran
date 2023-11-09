@@ -72,7 +72,6 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, origi
     random_seed = random.randint(0, 2**10 - 1)  # for a 32-bit signed integer
      # Calculate new dimensions while maintaining aspect ratio
     new_width, new_height = calculate_new_dimensions(original_width, original_height)
-    st.write(f"New width: {new_width}, new height: {new_height}")
     url = "https://api.getimg.ai/v1/stable-diffusion/inpaint"
     payload = {
         "image": upload_file,
@@ -99,12 +98,13 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, origi
         if image_base64:
             # Create the full data URI scheme string
             data_url = f"data:image/png;base64,{image_base64}"
-            st.image(data_url)
+            return data_url
         else:
             st.error("No image in response.")
     else:
         st.error("Failed to get a successful response.")
         st.write(response.text)
+    return None
 
 # Set up the streamlit app
 st.title("Image Masking App")
@@ -123,7 +123,7 @@ if uploaded_file is not None:
     # Save original image 
     original_image.save("original.png")
     # Set up canvas properties
-    stroke_width = st.slider("Stroke width: ", 1, 50, 3)
+    stroke_width = st.slider("Stroke width: ", 1, 100, 3)
     # stroke_color is white at beginning
     stroke_color = "#ffffff"
     #bg_color is black at beginning
@@ -144,15 +144,20 @@ if uploaded_file is not None:
         drawing_mode=drawing_mode,
         key="canvas",
     )
-    
+    prompt = st.text_input("Enter a prompt about what you would like to inpaint:", "Christmas, beautiful, impressive, fancy")
     # When the user is done with the drawing and a save button is clicked
-    if st.button('Save Canvas'):
+    if st.button('Inpaint the image'):
         # Check if there is image data from the canvas
         if canvas_result.image_data is not None:
             # Get the width and height of the image
             image = Image.open(uploaded_file)
             width, height = image.size
             canvas_base64_string = save_canvas_as_base64(canvas_result.image_data)
-            result = inpaint_with_getimg_ai("Christmas, beautiful, impressive room", upload_file_base64_string, canvas_base64_string, width, height)
+            result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, width, height)
+            if result:
+                st.image(result, use_column_width=True)
+            else:
+                st.error("The picture cannot be inpainted. So sorry, please try again.")
+
 
         
