@@ -81,8 +81,8 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, origi
         "prompt": prompt,
         "negative_prompt": "bad, Disfigured, cartoon, blurry, nude",
         "strength": 0.001,
-        "width": 512,
-        "height": 1024,
+        "width": new_width,
+        "height": new_height,
         "steps": 80,
         "seed": random_seed,
         "output_format": "png"
