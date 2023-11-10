@@ -60,7 +60,7 @@ if uploaded_file is not None:
 
             # Enhance brightness
             brightness_enhancer = ImageEnhance.Brightness(color_enhanced_image)
-            enhanced_image = brightness_enhancer.enhance(1.025) 
+            enhanced_image = brightness_enhancer.enhance(1.03) 
 
             # Use tempfile to handle temporary file creation and deletion
             with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as tmp_original_file, tempfile.NamedTemporaryFile(delete=True, suffix=".png") as tmp_enhanced_file:
