@@ -27,7 +27,6 @@ def calculate_new_dimensions(width, height, max_dimension=1024):
 # Function to convert image to base64
 def image_to_base64(image, width, height):
     new_width, new_height = calculate_new_dimensions(width, height)
-    st.write(f"New width: {new_width}, new height: {new_height}")
     # Resize the image
     resized_image = image.resize((new_width, new_height))
     # Convert the resized image to a byte array
@@ -48,7 +47,7 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height
         # "model": "realistic-vision-v5-1-inpainting",
         "model": "stable-diffusion-v1-5-inpainting",
         "prompt": prompt,
-        "negative_prompt": "bad, Disfigured, cartoon, blurry, nude, frame, picture, painting, drawing, text, boring, same pattern, separated, irrelevant, gallery, album",
+        "negative_prompt": "bad, Disfigured, cartoon, blurry, nude, frame, picture, painting, drawing, text, boring, same pattern, separated, irrelevant, gallery, album, banners",
         "width": new_width,
         "height": new_height,
         "steps": 80,
