@@ -2,10 +2,15 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 import numpy as np
+import cv2
 import consts
+import tempfile
+import os
 import io
 from PIL import Image
+from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
+from torchvision.transforms import GaussianBlur
 import base64
 import requests
 import random
@@ -39,6 +44,12 @@ def get_image_base64(image_bytes):
     base64_string = base64_bytes.decode('utf-8')
     return base64_string
 
+# Initialize the Stability API client
+stability_api = client.StabilityInference(
+    key=consts.API_KEY_STABILITY_AI,
+    verbose=True, # Print debug messages.
+    engine="stable-diffusion-xl-1024-v1-0", # Set the engine to use for generation.
+)
 def resize_to_multiple_of_64(image):
     # Calculate the new dimensions, rounding down to the nearest multiple of 64
     new_width = (image.width // 64) * 64
@@ -55,6 +66,7 @@ def calculate_new_dimensions(width, height, max_dimension=1024):
     else:
         # Calculate scaling factor for height
         scaling_factor = max_dimension / height
+    
     # Calculate new dimensions based on the scaling factor
     new_width = int(width * scaling_factor)
     new_height = int(height * scaling_factor)
@@ -64,6 +76,7 @@ def calculate_new_dimensions(width, height, max_dimension=1024):
         new_width = max_dimension
     else:
         new_height = max_dimension
+    
     return new_width, new_height
 
 # Define the inpainting function using Stability SDK
@@ -123,14 +136,15 @@ if uploaded_file is not None:
     # Save original image 
     original_image.save("original.png")
     # Set up canvas properties
-    stroke_width = st.slider("Stroke width: ", 1, 100, 3)
+    stroke_width = st.slider("Stroke width: ", 1, 100, 20)
     # stroke_color is white at beginning
     stroke_color = "#ffffff"
     #bg_color is black at beginning
     bg_color = "#000000"
     drawing_mode = "freedraw"
     realtime_update = True
-
+    st.write("Draw on the image to create a mask:")
+    st.write("Click and drag your mouse across the image to create an area for inpainting. If you make a mistake, simply use the undo/redo button below the image.")
     # Create a canvas component
     canvas_result = st_canvas(
         fill_color="rgba(255, 255, 255, 1)",  # Fixed fill color with some opacity
@@ -144,21 +158,21 @@ if uploaded_file is not None:
         drawing_mode=drawing_mode,
         key="canvas",
     )
-    prompt = st.text_input("Enter a prompt about what you would like to inpaint:", "Christmas, beautiful, impressive, fancy")
+    prompt = st.text_input('Please enter a prompt for what you would like to inpaint:', 'Make it look like a Christmas style.')
+
     # When the user is done with the drawing and a save button is clicked
-    if st.button('Inpaint the image'):
-        with st.spinner("Please wait. Inpainting..."):
-            # Check if there is image data from the canvas
-            if canvas_result.image_data is not None:
+    if st.button('Inpaint the picture'):
+        # Check if there is image data from the canvas
+        if canvas_result.image_data is not None:
+            with st.spinner("Inpainting... Please wait."):
                 # Get the width and height of the image
                 image = Image.open(uploaded_file)
                 width, height = image.size
                 canvas_base64_string = save_canvas_as_base64(canvas_result.image_data)
                 result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, width, height)
                 if result:
-                    st.image(result, use_column_width=True)
+                    st.image(result, caption="Result", use_column_width=True)
                 else:
-                    st.error("The picture cannot be inpainted. So sorry, please try again.")
-
+                    st.error("Failed to get a result.")
 
         
