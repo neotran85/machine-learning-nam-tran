@@ -136,8 +136,6 @@ if uploaded_file is not None:
 
     st.write("Draw on the image to create a mask: Click and drag your mouse across the image to create an area for inpainting. If you make a mistake, simply use the undo/redo button below the image.")
 
-    # Save original image 
-    original_image.save("original.png")
     # Set up canvas properties
     stroke_width = st.slider("Stroke width: ", 1, 100, 20)
     # stroke_color is white at beginning
