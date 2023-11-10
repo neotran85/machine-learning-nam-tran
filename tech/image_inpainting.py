@@ -50,13 +50,11 @@ stability_api = client.StabilityInference(
     verbose=True, # Print debug messages.
     engine="stable-diffusion-xl-1024-v1-0", # Set the engine to use for generation.
 )
-def resize_to_multiple_of_64(image):
+def resize_to_multiple_of_64(width, height):
     # Calculate the new dimensions, rounding down to the nearest multiple of 64
-    new_width = (image.width // 64) * 64
-    new_height = (image.height // 64) * 64
-    # Resize the image to the new dimensions
-    resized_image = image.resize((new_width, new_height), Image.ADAPTIVE)
-    return resized_image
+    new_width = (width // 64) * 64
+    new_height = (height // 64) * 64
+    return new_width, new_height    
 
 def calculate_new_dimensions(width, height, max_dimension=1024):
     # Determine whether to scale based on width or height by finding out which dimension is larger
@@ -77,10 +75,10 @@ def calculate_new_dimensions(width, height, max_dimension=1024):
     else:
         new_height = max_dimension
     
-    return new_width, new_height
+    return resize_to_multiple_of_64(new_width, new_height)
 
 # Define the inpainting function using Stability SDK
-def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, original_height, target_dimension=1024):
+def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, original_height, target_dimension=2048):
     # Generate a random seed
     random_seed = random.randint(0, 2**10 - 1)  # for a 32-bit signed integer
      # Calculate new dimensions while maintaining aspect ratio
@@ -129,9 +127,7 @@ if uploaded_file is not None:
     bytes_data = uploaded_file.getvalue()
     # Get base64 string
     upload_file_base64_string = get_image_base64(bytes_data)
-
     original_image = Image.open(uploaded_file).convert("RGB")
-    original_image = resize_to_multiple_of_64(original_image)
     img_array = np.array(original_image)
 
     st.write("Draw on the image to create a mask: Click and drag your mouse across the image to create an area for inpainting. If you make a mistake, simply use the undo/redo button below the image.")

@@ -1,63 +1,19 @@
 import streamlit as st
-from streamlit_drawable_canvas import st_canvas
-from PIL import Image
-import numpy as np
-import cv2
-import consts
-import tempfile
-import os
-import io
-from PIL import Image
-from stability_sdk import client
-import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
-from torchvision.transforms import GaussianBlur
-import base64
-import requests
+from PIL import Image, ImageDraw
+import base64   
 import random
+import consts
+import requests
+import io
 
-def get_base64_of_image(image):
-    # Save the image to a BytesIO object
-    buffered = io.BytesIO()
-    image.save(buffered, format="PNG")
-    # Get the base64-encoded string
-    img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
-    return img_str
-
-def save_canvas_as_base64(image_data):
-    # Convert the image data to a PIL Image object
-    image = Image.fromarray(image_data.astype('uint8'), 'RGBA')
-
-    # Create a black background image with the same size as the canvas image
-    black_bg = Image.new('RGB', image.size, 'black')
-    
-    # Paste the image onto the black background
-    black_bg.paste(image, (0, 0), image)
-
-    # Instead of saving the image as a file, convert it to a base64 string
-    base64_string = get_base64_of_image(black_bg)
-
-    return base64_string
-
-# Function to convert image bytes to base64
-def get_image_base64(image_bytes):
-    base64_bytes = base64.b64encode(image_bytes)
-    base64_string = base64_bytes.decode('utf-8')
-    return base64_string
-
-# Initialize the Stability API client
-stability_api = client.StabilityInference(
-    key=consts.API_KEY_STABILITY_AI,
-    verbose=True, # Print debug messages.
-    engine="stable-diffusion-xl-1024-v1-0", # Set the engine to use for generation.
-)
-def resize_to_multiple_of_64(image):
+# Resize the image to the nearest multiple of 64
+def resize_to_multiple_of_64(width, height):
     # Calculate the new dimensions, rounding down to the nearest multiple of 64
-    new_width = (image.width // 64) * 64
-    new_height = (image.height // 64) * 64
-    # Resize the image to the new dimensions
-    resized_image = image.resize((new_width, new_height), Image.ADAPTIVE)
-    return resized_image
+    new_width = (width // 64) * 64
+    new_height = (height // 64) * 64
+    return new_width, new_height
 
+# Calculate new dimensions while maintaining aspect ratio
 def calculate_new_dimensions(width, height, max_dimension=1024):
     # Determine whether to scale based on width or height by finding out which dimension is larger
     if width > height:
@@ -77,7 +33,14 @@ def calculate_new_dimensions(width, height, max_dimension=1024):
     else:
         new_height = max_dimension
     
-    return new_width, new_height
+    return resize_to_multiple_of_64(new_width, new_height)
+
+# Function to convert image to base64
+def image_to_base64(image):
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format='PNG')  # or 'JPEG' depending on your image
+    img_byte_arr = img_byte_arr.getvalue()
+    return base64.b64encode(img_byte_arr).decode('utf-8')
 
 # Define the inpainting function using Stability SDK
 def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, original_height, target_dimension=1024):
@@ -91,7 +54,7 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, origi
         "mask_image": mask_file,
         "model": "realistic-vision-v5-1-inpainting",
         "prompt": prompt,
-        "negative_prompt": "bad, Disfigured, cartoon, blurry, nude",
+        "negative_prompt": "bad, Disfigured, cartoon, blurry, nude, frame, picture, painting, drawing, text, boring, same pattern",
         "strength": 0.001,
         "width": new_width,
         "height": new_height,
@@ -119,59 +82,50 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, origi
         st.write(response.text)
     return None
 
-# Set up the streamlit app
-st.title("Image Inpainting")
+st.title("Image Extender")
 
 # File uploader
-uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+
 if uploaded_file is not None:
-    # To read as bytes
-    bytes_data = uploaded_file.getvalue()
-    # Get base64 string
-    upload_file_base64_string = get_image_base64(bytes_data)
+    # Display the original image
+    image = Image.open(uploaded_file).convert("RGB")
 
-    original_image = Image.open(uploaded_file).convert("RGB")
-    original_image = resize_to_multiple_of_64(original_image)
-    img_array = np.array(original_image)
+    # Use slider to adjust the extension size in percentage
+    left = st.slider("Left", 0, 100, 0) * image.width // 100
+    right = st.slider("Right", 0, 100, 0) * image.width // 100
+    top = st.slider("Top", 0, 100, 0) * image.height // 100
+    bottom = st.slider("Bottom", 0, 100, 0) * image.height // 100
 
-    st.write("Draw on the image to create a mask: Click and drag your mouse across the image to create an area for inpainting. If you make a mistake, simply use the undo/redo button below the image.")
+    # Create a new image with the desired dimensions
+    new_width = image.width + left + right
+    new_height = image.height + top + bottom
+    # Fill with gray color
 
-    # Set up canvas properties
-    stroke_width = st.slider("Stroke width: ", 1, 100, 20)
-    # stroke_color is white at beginning
-    stroke_color = "#ffffff"
-    #bg_color is black at beginning
-    bg_color = "#000000"
-    drawing_mode = "freedraw"
-    realtime_update = True
-    # Create a canvas component
-    canvas_result = st_canvas(
-        fill_color="rgba(255, 255, 255, 1)",  # Fixed fill color with some opacity
-        stroke_width=stroke_width,
-        stroke_color=stroke_color,
-        background_color=bg_color,
-        background_image=Image.open(uploaded_file).convert("RGBA"),
-        update_streamlit=realtime_update,
-        height=img_array.shape[0],
-        width=img_array.shape[1],
-        drawing_mode=drawing_mode,
-        key="canvas",
-    )
-    prompt = st.text_input('Please enter a prompt about what you would like to inpaint:', 'Make it look like a Christmas style.')
+    new_image = Image.new("RGB", (new_width, new_height), "gray")
 
-    # When the user is done with the drawing and a save button is clicked
-    if st.button('Inpaint the picture'):
-        # Check if there is image data from the canvas
-        if canvas_result.image_data is not None:
-            with st.spinner("Inpainting... Please wait."):
-                # Get the width and height of the image
-                image = Image.open(uploaded_file)
-                width, height = image.size
-                canvas_base64_string = save_canvas_as_base64(canvas_result.image_data)
-                result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, width, height)
-                if result:
-                    st.image(result, caption="Result", use_column_width=True)
-                else:
-                    st.error("Failed to get a result.")
+    # Paste the original image onto the new background
+    new_image.paste(image, (left, top))
 
-        
+    # Display the extended image
+    st.image(new_image, caption='Sample Extended Image.', use_column_width=True)
+    new_image_base64_string = image_to_base64(new_image)
+
+    # Create another new image for the rectangle
+    rectangle_image = Image.new("RGB", (new_width, new_height), "white")
+    draw = ImageDraw.Draw(rectangle_image)
+    draw.rectangle([(left + 20, top + 20), (left + image.width - 20, top + image.height - 20)], fill="black")
+    mask_image_base64_string = image_to_base64(rectangle_image)
+
+    # Display the rectangle image
+    # st.image(rectangle_image, caption='Image with Rectangle.', use_column_width=True)
+
+    if st.button("Extend the image"):
+        with st.spinner("Extending the image..."):
+        # Inpaint the image
+            prompt = "pizza tomato cheese pepperoni mushroom olives"
+            result_image_base64_string = inpaint_with_getimg_ai(prompt, new_image_base64_string, mask_image_base64_string, new_width, new_height)
+            if result_image_base64_string:
+                st.image(result_image_base64_string, caption="Result", use_column_width=True)
+            else:
+                st.error("Failed to get a result.")
