@@ -52,10 +52,10 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, origi
     payload = {
         "image": upload_file,
         "mask_image": mask_file,
-        "model": "realistic-vision-v5-1-inpainting",
+        # "model": "realistic-vision-v5-1-inpainting",
+        "model": "stable-diffusion-v1-5-inpainting",
         "prompt": prompt,
-        "negative_prompt": "bad, Disfigured, cartoon, blurry, nude, frame, picture, painting, drawing, text, boring, same pattern",
-        "strength": 0.001,
+        "negative_prompt": "bad, Disfigured, cartoon, blurry, nude, frame, picture, painting, drawing, text, boring, same pattern, separated, irrelevant, gallery, album",
         "width": new_width,
         "height": new_height,
         "steps": 80,
@@ -119,12 +119,13 @@ if uploaded_file is not None:
 
     # Display the rectangle image
     # st.image(rectangle_image, caption='Image with Rectangle.', use_column_width=True)
-
+    # additional_prompt = " In extending the image, please avoid creating any separate, distinct sections that do not seamlessly blend with the existing content. Do not generate isolated elements or images within images, such as gallery pictures, that would disrupt the continuity of the scene. The extension should appear as a natural, uninterrupted continuation of the original image, without any abrupt changes in theme, style, or content."
+    additional_prompt = ""
+    prompt = st.text_input('Tell us about what you would like the extended area to be:', '')
     if st.button("Extend the image"):
         with st.spinner("Extending the image..."):
-        # Inpaint the image
-            prompt = "pizza tomato cheese pepperoni mushroom olives"
-            result_image_base64_string = inpaint_with_getimg_ai(prompt, new_image_base64_string, mask_image_base64_string, new_width, new_height)
+            # prompt = prompt + additional_prompt
+            result_image_base64_string = inpaint_with_getimg_ai(prompt + additional_prompt, new_image_base64_string, mask_image_base64_string, new_width, new_height)
             if result_image_base64_string:
                 st.image(result_image_base64_string, caption="Result", use_column_width=True)
             else:
