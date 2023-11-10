@@ -133,6 +133,9 @@ if uploaded_file is not None:
     original_image = Image.open(uploaded_file).convert("RGB")
     original_image = resize_to_multiple_of_64(original_image)
     img_array = np.array(original_image)
+
+    st.write("Draw on the image to create a mask: Click and drag your mouse across the image to create an area for inpainting. If you make a mistake, simply use the undo/redo button below the image.")
+
     # Save original image 
     original_image.save("original.png")
     # Set up canvas properties
@@ -143,8 +146,6 @@ if uploaded_file is not None:
     bg_color = "#000000"
     drawing_mode = "freedraw"
     realtime_update = True
-    st.write("Draw on the image to create a mask:")
-    st.write("Click and drag your mouse across the image to create an area for inpainting. If you make a mistake, simply use the undo/redo button below the image.")
     # Create a canvas component
     canvas_result = st_canvas(
         fill_color="rgba(255, 255, 255, 1)",  # Fixed fill color with some opacity
@@ -158,7 +159,7 @@ if uploaded_file is not None:
         drawing_mode=drawing_mode,
         key="canvas",
     )
-    prompt = st.text_input('Please enter a prompt for what you would like to inpaint:', 'Make it look like a Christmas style.')
+    prompt = st.text_input('Please enter a prompt about what you would like to inpaint:', 'Make it look like a Christmas style.')
 
     # When the user is done with the drawing and a save button is clicked
     if st.button('Inpaint the picture'):
