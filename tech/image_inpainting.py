@@ -15,15 +15,17 @@ import base64
 import requests
 import random
 
-def get_base64_of_image(image):
-    # Save the image to a BytesIO object
-    buffered = io.BytesIO()
-    image.save(buffered, format="PNG")
-    # Get the base64-encoded string
-    img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
-    return img_str
+def image_to_base64(image, width, height):
+    new_width, new_height = calculate_new_dimensions(width, height)
+    # Resize the image
+    resized_image = image.resize((new_width, new_height))
+    # Convert the resized image to a byte array
+    img_byte_arr = io.BytesIO()
+    resized_image.save(img_byte_arr, format='PNG')  # or 'JPEG' depending on your image
+    img_byte_arr = img_byte_arr.getvalue()
+    return base64.b64encode(img_byte_arr).decode('utf-8'), new_width, new_height
 
-def save_canvas_as_base64(image_data):
+def save_canvas_as_base64(image_data, width, height):
     # Convert the image data to a PIL Image object
     image = Image.fromarray(image_data.astype('uint8'), 'RGBA')
 
@@ -32,11 +34,7 @@ def save_canvas_as_base64(image_data):
     
     # Paste the image onto the black background
     black_bg.paste(image, (0, 0), image)
-
-    # Instead of saving the image as a file, convert it to a base64 string
-    base64_string = get_base64_of_image(black_bg)
-
-    return base64_string
+    return image_to_base64(black_bg, width, height)
 
 # Function to convert image bytes to base64
 def get_image_base64(image_bytes):
@@ -50,39 +48,29 @@ stability_api = client.StabilityInference(
     verbose=True, # Print debug messages.
     engine="stable-diffusion-xl-1024-v1-0", # Set the engine to use for generation.
 )
+# Resize the image to the nearest multiple of 64
 def resize_to_multiple_of_64(width, height):
     # Calculate the new dimensions, rounding down to the nearest multiple of 64
-    new_width = (width // 64) * 64
-    new_height = (height // 64) * 64
-    return new_width, new_height    
+    new_width = int((width // 64) * 64)
+    new_height = int((height // 64) * 64)
+    return new_width, new_height
 
+# Calculate new dimensions while maintaining aspect ratio
 def calculate_new_dimensions(width, height, max_dimension=1024):
-    # Determine whether to scale based on width or height by finding out which dimension is larger
+    ratio = width / height
     if width > height:
-        # Calculate scaling factor for width
-        scaling_factor = max_dimension / width
+        temp_width = max_dimension
+        temp_height = temp_width / ratio
     else:
-        # Calculate scaling factor for height
-        scaling_factor = max_dimension / height
-    
-    # Calculate new dimensions based on the scaling factor
-    new_width = int(width * scaling_factor)
-    new_height = int(height * scaling_factor)
-    
-    # Ensure that at least one dimension is exactly 1024 pixels
-    if new_width > new_height:
-        new_width = max_dimension
-    else:
-        new_height = max_dimension
-    
-    return resize_to_multiple_of_64(new_width, new_height)
+        temp_height = max_dimension
+        temp_width = temp_height * ratio
+    return resize_to_multiple_of_64(temp_width, temp_height)
 
 # Define the inpainting function using Stability SDK
-def inpaint_with_getimg_ai(prompt, upload_file, mask_file, original_width, original_height, target_dimension=2048):
+def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height, target_dimension=2048):
     # Generate a random seed
     random_seed = random.randint(0, 2**10 - 1)  # for a 32-bit signed integer
      # Calculate new dimensions while maintaining aspect ratio
-    new_width, new_height = calculate_new_dimensions(original_width, original_height)
     url = "https://api.getimg.ai/v1/stable-diffusion/inpaint"
     payload = {
         "image": upload_file,
@@ -163,8 +151,8 @@ if uploaded_file is not None:
                 # Get the width and height of the image
                 image = Image.open(uploaded_file)
                 width, height = image.size
-                canvas_base64_string = save_canvas_as_base64(canvas_result.image_data)
-                result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, width, height)
+                canvas_base64_string, new_width, new_height = save_canvas_as_base64(canvas_result.image_data, width, height)
+                result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, new_width, new_height)
                 if result:
                     st.image(result, caption="Result", use_column_width=True)
                 else:
