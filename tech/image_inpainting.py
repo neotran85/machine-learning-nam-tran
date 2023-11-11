@@ -14,6 +14,25 @@ from torchvision.transforms import GaussianBlur
 import base64
 import requests
 import random
+from streamlit_image_comparison import image_comparison
+
+# Resize the image to the nearest multiple of 64
+def resize_to_multiple_of_64(width, height):
+    # Calculate the new dimensions, rounding down to the nearest multiple of 64
+    new_width = int((width // 64) * 64)
+    new_height = int((height // 64) * 64)
+    return new_width, new_height
+
+# Calculate new dimensions while maintaining aspect ratio
+def calculate_new_dimensions(width, height, max_dimension=1024):
+    ratio = width / height
+    if width > height:
+        temp_width = max_dimension
+        temp_height = temp_width / ratio
+    else:
+        temp_height = max_dimension
+        temp_width = temp_height * ratio
+    return resize_to_multiple_of_64(temp_width, temp_height)
 
 def image_to_base64(image, width, height):
     new_width, new_height = calculate_new_dimensions(width, height)
@@ -38,9 +57,10 @@ def save_canvas_as_base64(image_data, width, height):
 
 # Function to convert image bytes to base64
 def get_image_base64(image_bytes):
-    base64_bytes = base64.b64encode(image_bytes)
-    base64_string = base64_bytes.decode('utf-8')
-    return base64_string
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format='PNG')  # You can change to 'JPEG' if needed
+    img_byte_arr = img_byte_arr.getvalue()
+    return base64.b64encode(img_byte_arr).decode('utf-8')
 
 # Initialize the Stability API client
 stability_api = client.StabilityInference(
@@ -48,23 +68,7 @@ stability_api = client.StabilityInference(
     verbose=True, # Print debug messages.
     engine="stable-diffusion-xl-1024-v1-0", # Set the engine to use for generation.
 )
-# Resize the image to the nearest multiple of 64
-def resize_to_multiple_of_64(width, height):
-    # Calculate the new dimensions, rounding down to the nearest multiple of 64
-    new_width = int((width // 64) * 64)
-    new_height = int((height // 64) * 64)
-    return new_width, new_height
 
-# Calculate new dimensions while maintaining aspect ratio
-def calculate_new_dimensions(width, height, max_dimension=1024):
-    ratio = width / height
-    if width > height:
-        temp_width = max_dimension
-        temp_height = temp_width / ratio
-    else:
-        temp_height = max_dimension
-        temp_width = temp_height * ratio
-    return resize_to_multiple_of_64(temp_width, temp_height)
 
 # Define the inpainting function using Stability SDK
 def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height, target_dimension=2048):
@@ -94,16 +98,32 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height
     if response.status_code == 200:
         response_json = response.json()
         image_base64 = response_json.get('image')  # Assuming the key is 'image'
-        if image_base64:
-            # Create the full data URI scheme string
-            data_url = f"data:image/png;base64,{image_base64}"
-            return data_url
-        else:
-            st.error("No image in response.")
+        return image_base64
     else:
         st.error("Failed to get a successful response.")
         st.write(response.text)
     return None
+
+def correct_base64_padding(base64_string):
+    # Correct the padding of the Base64 string if necessary
+    padding = len(base64_string) % 4
+    return base64_string + "=" * (4 - padding) if padding else base64_string
+
+# Save the Base64 string as an image file to tempfile
+def save_base64_image(base64_string):
+    # Ensure the Base64 string is correctly padded
+    base64_string = correct_base64_padding(base64_string)
+    # Decode the Base64 string to get the binary data
+    try:
+        image_data = base64.b64decode(base64_string)
+    except Exception as e:
+        raise ValueError(f"Error decoding Base64 string: {e}")
+
+    # Open a file in binary write mode and write the image data
+    filename = tempfile.NamedTemporaryFile(delete=True, suffix=".png").name
+    with open(filename, 'wb') as file:
+        file.write(image_data)
+    return filename
 
 # Set up the streamlit app
 st.title("Image Inpainting")
@@ -111,34 +131,40 @@ st.title("Image Inpainting")
 # File uploader
 uploaded_file = st.file_uploader("Choose an image...", type=["png", "jpg", "jpeg"])
 if uploaded_file is not None:
-    # To read as bytes
-    bytes_data = uploaded_file.getvalue()
-    # Get base64 string
-    upload_file_base64_string = get_image_base64(bytes_data)
-    original_image = Image.open(uploaded_file).convert("RGB")
-    img_array = np.array(original_image)
+    # Open the image using PIL
+    image = Image.open(uploaded_file)
+
+    # Get original dimensions
+    original_width, original_height = image.size
+
+    # Calculate new dimensions
+    new_width, new_height = calculate_new_dimensions(original_width, original_height)
+    
+    # Resize the image
+    resized_image = image.resize((new_width, new_height))
+    img_array = np.array(resized_image)
+    
+    # get Base64 string of Resized image
+    upload_file_base64_string = get_image_base64(resized_image)
 
     st.write("Draw on the image to create a mask: Click and drag your mouse across the image to create an area for inpainting. If you make a mistake, simply use the undo/redo button below the image.")
-
     # Set up canvas properties
     stroke_width = st.slider("Stroke width: ", 1, 100, 20)
     # stroke_color is white at beginning
     stroke_color = "#ffffff"
     #bg_color is black at beginning
     bg_color = "#000000"
-    drawing_mode = "freedraw"
-    realtime_update = True
     # Create a canvas component
     canvas_result = st_canvas(
         fill_color="rgba(255, 255, 255, 1)",  # Fixed fill color with some opacity
         stroke_width=stroke_width,
         stroke_color=stroke_color,
         background_color=bg_color,
-        background_image=Image.open(uploaded_file).convert("RGBA"),
-        update_streamlit=realtime_update,
+        background_image=resized_image,
+        update_streamlit=True,
         height=img_array.shape[0],
         width=img_array.shape[1],
-        drawing_mode=drawing_mode,
+        drawing_mode="freedraw",
         key="canvas",
     )
     prompt = st.text_input('Please enter a prompt about what you would like to inpaint:', 'Make it look like a Christmas style.')
@@ -153,8 +179,18 @@ if uploaded_file is not None:
                 width, height = image.size
                 canvas_base64_string, new_width, new_height = save_canvas_as_base64(canvas_result.image_data, width, height)
                 result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, new_width, new_height)
+
                 if result:
-                    st.image(result, caption="Result", use_column_width=True)
+                    # st.image(result, caption="Result", use_column_width=True)
+                    # Use tempfile to handle temporary file creation and deletion
+                    tmp_original_file = save_base64_image(upload_file_base64_string)
+                    tmp_enhanced_file = save_base64_image(result)
+                    image_comparison(
+                        img1=tmp_original_file,
+                        img2=tmp_enhanced_file,
+                        label1='Before',
+                        label2='After',
+                    )
                 else:
                     st.error("Failed to get a result.")
 
