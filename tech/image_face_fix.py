@@ -1,11 +1,3 @@
-# app.py
-import streamlit as st
-from PIL import Image
-from stability_sdk import client
-import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
-import io
-import consts
-
 import streamlit as st
 from PIL import Image, ImageDraw
 import base64   
@@ -32,22 +24,25 @@ def calculate_new_dimensions(width, height, max_dimension=1024):
         temp_width = temp_height * ratio
     return resize_to_multiple_of_64(temp_width, temp_height)
 
-# Function to convert image bytes to base64
-def get_image_base64(image_bytes):
+# Function to convert image to base64
+def image_to_base64(image, width, height):
+    new_width, new_height = calculate_new_dimensions(width, height)
+    # Resize the image
+    resized_image = image.resize((new_width, new_height))
+    # Convert the resized image to a byte array
     img_byte_arr = io.BytesIO()
-    image.save(img_byte_arr, format='PNG')  # You can change to 'JPEG' if needed
+    resized_image.save(img_byte_arr, format='PNG')  # or 'JPEG' depending on your image
     img_byte_arr = img_byte_arr.getvalue()
-    return base64.b64encode(img_byte_arr).decode('utf-8')
+    return base64.b64encode(img_byte_arr).decode('utf-8'), new_width, new_height
 
 # Define the inpainting function using Stability SDK
-def upscale(base64_image, scale_factor):
+def face_fix(base64_image):
     # Generate a random seed
     random_seed = random.randint(0, 2**10 - 1) 
-    url = "https://api.getimg.ai/v1/enhancements/upscale"
+    url = "https://api.getimg.ai/v1/enhancements/face-fix"
     payload = {
         "image": base64_image,
-        "model": "real-esrgan-4x",
-        "scale": scale_factor
+        "model": "gfpgan-v1-3",
     }
     headers = {
         "accept": "application/json",
@@ -68,11 +63,18 @@ def upscale(base64_image, scale_factor):
         st.error("Failed to get a successful response.")
         st.write(response.text)
     return None
+# Function to convert image bytes to base64
+def get_image_base64(image_bytes):
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format='PNG')  # You can change to 'JPEG' if needed
+    img_byte_arr = img_byte_arr.getvalue()
+    return base64.b64encode(img_byte_arr).decode('utf-8')
 
-st.title('AI-powered Image Upscaler')
+
+st.title("Ai-powered Face Fixer")
 
 # File uploader
-uploaded_file = st.file_uploader("Please choose an image to 4x upscale :", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     # Display the original image
@@ -82,16 +84,17 @@ if uploaded_file is not None:
 
     # Calculate new dimensions
     new_width, new_height = calculate_new_dimensions(original_width, original_height)
+    st.write(f"New dimensions: {new_width} x {new_height}")
     # Resize the image
     resized_image = image.resize((new_width, new_height))
     # Write size of resized image
-
+    st.write(f"Resized image: {resized_image.size}")
+    
     base64_string = get_image_base64(resized_image)
-    upscale_multiplier = 4
-    with st.spinner("Upscaling image..."):
-        result = upscale(base64_string, upscale_multiplier)
+
+    with st.spinner("Enhancing faces..."):
+        result = face_fix(base64_string)
         if result:
             st.image(result, caption="Result", use_column_width=True)
         else:
             st.error("Failed to get a result.")
-
