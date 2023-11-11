@@ -99,7 +99,7 @@ def show_left_menu():
                                 ("image_emotion_detector", "Emotion Detector"),
                                 ("image_remove_bg", "Background Eraser")],
         "Natural Language Processing": [("language_chatbot", "AI Assistant"),
-                                        ("ads_comparation", "Item 222")],                 
+                                        ("language_speech", "Text To Speech")],                 
         "Data Science": [("ads_comparation1", "Item 112"),
                          ("ads_comparation1", "Item 212")]
         # Add more folders and script-title tuples (without the .py extension)

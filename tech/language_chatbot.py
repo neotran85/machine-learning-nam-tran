@@ -1,11 +1,13 @@
 import streamlit as st
-import openai
+from openai import OpenAI
+import consts
+import os
 
 # Placeholder for chat messages
 chat_container = st.empty()
+os.environ['OPENAI_API_KEY'] = consts.API_KEY_OPEN_AI
+client = OpenAI()
 
-# Set your OpenAI API key here
-openai.api_key = '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'
 def show_chat_history():
     if len(st.session_state.chat_history) == 0:
         st.write("")
@@ -21,12 +23,12 @@ def show_chat_history():
 
 def get_ai_response(prompt):
     try:
-        response = openai.Completion.create(
+        response = client.completions.create(
             model="gpt-3.5-turbo-instruct",
             prompt=prompt,
-            max_tokens=1000
+            max_tokens=500,
         )
-        return response['choices'][0]['text']
+        return response.choices[0].text
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
@@ -49,8 +51,9 @@ if user_message:
 show_chat_history()  # Show the chat history
 
 # Clear chat history button
-if st.button("Clear Chat History"):
-    st.session_state.chat_history = []
-    show_chat_history()  # Show the empty chat history
-    chat_container.empty()  # Clear the chat input box
+if len(st.session_state.chat_history) > 0:
+    if st.button("Clear Chat History"):
+        st.session_state.chat_history = []
+        show_chat_history()  # Show the empty chat history
+        chat_container.empty()  # Clear the chat input box
 
