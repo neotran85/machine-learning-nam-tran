@@ -38,14 +38,13 @@ def image_to_base64(image, width, height):
 # Define the inpainting function using Stability SDK
 def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height, target_dimension=1024):
     # Generate a random seed
-    random_seed = random.randint(0, 2**10 - 1)  # for a 32-bit signed integer
-     # Calculate new dimensions while maintaining aspect ratio
+    random_seed = random.randint(0, 2**10 - 1) 
     url = "https://api.getimg.ai/v1/stable-diffusion/inpaint"
     payload = {
         "image": upload_file,
         "mask_image": mask_file,
-        # "model": "realistic-vision-v5-1-inpainting",
-        "model": "stable-diffusion-v1-5-inpainting",
+        "model": "realistic-vision-v5-1-inpainting",
+        # "model": "stable-diffusion-v1-5-inpainting",
         "prompt": prompt,
         "negative_prompt": "bad, Disfigured, cartoon, blurry, nude, frame, picture, painting, drawing, text, boring, same pattern, separated, irrelevant, gallery, album, banners",
         "width": new_width,
