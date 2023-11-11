@@ -34,17 +34,15 @@ def calculate_new_dimensions(width, height, max_dimension=1024):
         temp_width = temp_height * ratio
     return resize_to_multiple_of_64(temp_width, temp_height)
 
-def image_to_base64(image, width, height):
-    new_width, new_height = calculate_new_dimensions(width, height)
+def image_to_base64(image):
     # Resize the image
-    resized_image = image.resize((new_width, new_height))
     # Convert the resized image to a byte array
     img_byte_arr = io.BytesIO()
-    resized_image.save(img_byte_arr, format='PNG')  # or 'JPEG' depending on your image
+    image.save(img_byte_arr, format='PNG')  # or 'JPEG' depending on your image
     img_byte_arr = img_byte_arr.getvalue()
-    return base64.b64encode(img_byte_arr).decode('utf-8'), new_width, new_height
+    return base64.b64encode(img_byte_arr).decode('utf-8')
 
-def save_canvas_as_base64(image_data, width, height):
+def save_canvas_as_base64(image_data):
     # Convert the image data to a PIL Image object
     image = Image.fromarray(image_data.astype('uint8'), 'RGBA')
 
@@ -53,7 +51,7 @@ def save_canvas_as_base64(image_data, width, height):
     
     # Paste the image onto the black background
     black_bg.paste(image, (0, 0), image)
-    return image_to_base64(black_bg, width, height)
+    return image_to_base64(black_bg)
 
 # Function to convert image bytes to base64
 def get_image_base64(image_bytes):
@@ -71,10 +69,8 @@ stability_api = client.StabilityInference(
 
 
 # Define the inpainting function using Stability SDK
-def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height, target_dimension=2048):
-    # Generate a random seed
+def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height):
     random_seed = random.randint(0, 2**10 - 1)  # for a 32-bit signed integer
-     # Calculate new dimensions while maintaining aspect ratio
     url = "https://api.getimg.ai/v1/stable-diffusion/inpaint"
     payload = {
         "image": upload_file,
@@ -124,6 +120,19 @@ def save_base64_image(base64_string):
     with open(filename, 'wb') as file:
         file.write(image_data)
     return filename
+
+def display_image_from_base64(base64_string):
+    # Convert the Base64 string to bytes
+    image_data = base64.b64decode(base64_string)
+
+    # Create a BytesIO stream from the image data
+    image_stream = io.BytesIO(image_data)
+
+    # Open the image
+    image = Image.open(image_stream)
+
+    # Display the image using Streamlit
+    st.image(image, use_column_width=True)
 
 # Set up the streamlit app
 st.title("Image Inpainting")
@@ -177,20 +186,19 @@ if uploaded_file is not None:
                 # Get the width and height of the image
                 image = Image.open(uploaded_file)
                 width, height = image.size
-                canvas_base64_string, new_width, new_height = save_canvas_as_base64(canvas_result.image_data, width, height)
+                canvas_base64_string = save_canvas_as_base64(canvas_result.image_data)
                 result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, new_width, new_height)
 
                 if result:
-                    # st.image(result, caption="Result", use_column_width=True)
-                    # Use tempfile to handle temporary file creation and deletion
-                    tmp_original_file = save_base64_image(upload_file_base64_string)
-                    tmp_enhanced_file = save_base64_image(result)
-                    image_comparison(
-                        img1=tmp_original_file,
-                        img2=tmp_enhanced_file,
-                        label1='Before',
-                        label2='After',
-                    )
+                    # tmp_original_file = save_base64_image(upload_file_base64_string)
+                    # tmp_enhanced_file = save_base64_image(result)
+                    # image_comparison(
+                        # img1=tmp_original_file,
+                        # img2=tmp_enhanced_file,
+                        # label1='Before',
+                        # label2='After',
+                    # )
+                    display_image_from_base64(result)
                 else:
                     st.error("Failed to get a result.")
 

@@ -49,6 +49,7 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height
         "negative_prompt": "bad, Disfigured, cartoon, blurry, nude, frame, picture, painting, drawing, text, boring, same pattern, separated, irrelevant, gallery, album, banners",
         "width": new_width,
         "height": new_height,
+        "strength": 0.001,
         "steps": 80,
         "seed": random_seed,
         "output_format": "png"
