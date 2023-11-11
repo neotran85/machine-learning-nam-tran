@@ -49,7 +49,7 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height
         "negative_prompt": "bad, Disfigured, cartoon, blurry, nude, frame, picture, painting, drawing, text, boring, same pattern, separated, irrelevant, gallery, album, banners",
         "width": new_width,
         "height": new_height,
-        "strength": 0.001,
+        "strength": 0.0001,
         "steps": 80,
         "seed": random_seed,
         "output_format": "png"
@@ -74,10 +74,10 @@ def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height
         st.write(response.text)
     return None
 
-st.title("Image Extender")
+st.title("AI-powered Image Extender")
 
 # File uploader
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Choose an image to extend...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     # Display the original image

@@ -98,7 +98,7 @@ def show_left_menu():
                                 ("image_pose_detector", "Pose Detector"),
                                 ("image_emotion_detector", "Emotion Detector"),
                                 ("image_remove_bg", "Background Eraser")],
-        "Natural Language Processing": [("chatbot", "Chatbot"),
+        "Natural Language Processing": [("language_chatbot", "AI Assistant"),
                                         ("ads_comparation", "Item 222")],                 
         "Data Science": [("ads_comparation1", "Item 112"),
                          ("ads_comparation1", "Item 212")]
