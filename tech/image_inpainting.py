@@ -2,19 +2,13 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 import numpy as np
-import cv2
 import consts
 import tempfile
-import os
 import io
 from PIL import Image
-from stability_sdk import client
-import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
-from torchvision.transforms import GaussianBlur
 import base64
 import requests
 import random
-from streamlit_image_comparison import image_comparison
 
 # Resize the image to the nearest multiple of 64
 def resize_to_multiple_of_64(width, height):
@@ -59,14 +53,6 @@ def get_image_base64(image_bytes):
     image.save(img_byte_arr, format='PNG')  # You can change to 'JPEG' if needed
     img_byte_arr = img_byte_arr.getvalue()
     return base64.b64encode(img_byte_arr).decode('utf-8')
-
-# Initialize the Stability API client
-stability_api = client.StabilityInference(
-    key=consts.API_KEY_STABILITY_AI,
-    verbose=True, # Print debug messages.
-    engine="stable-diffusion-xl-1024-v1-0", # Set the engine to use for generation.
-)
-
 
 # Define the inpainting function using Stability SDK
 def inpaint_with_getimg_ai(prompt, upload_file, mask_file, new_width, new_height):
@@ -190,14 +176,6 @@ if uploaded_file is not None:
                 result = inpaint_with_getimg_ai(prompt, upload_file_base64_string, canvas_base64_string, new_width, new_height)
 
                 if result:
-                    # tmp_original_file = save_base64_image(upload_file_base64_string)
-                    # tmp_enhanced_file = save_base64_image(result)
-                    # image_comparison(
-                        # img1=tmp_original_file,
-                        # img2=tmp_enhanced_file,
-                        # label1='Before',
-                        # label2='After',
-                    # )
                     display_image_from_base64(result)
                 else:
                     st.error("Failed to get a result.")

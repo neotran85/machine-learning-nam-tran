@@ -4,6 +4,14 @@ import consts
 import os
 import tempfile
 
+# Initialize chat history in session state
+if 'audio_history' not in st.session_state:
+  st.session_state.audio_history = []
+# Placeholder for chat messages
+chat_container = st.empty()
+os.environ['OPENAI_API_KEY'] = consts.API_KEY_OPEN_AI
+client = OpenAI()
+
 def clear_history():
   st.session_state.audio_history = []
   chat_container.empty()  # Clear the chat input box
@@ -20,12 +28,6 @@ def show_audio(message):
       )
       response.stream_to_file(speech_file_path)
       st.audio(speech_file_path)
-      
-
-# Placeholder for chat messages
-chat_container = st.empty()
-os.environ['OPENAI_API_KEY'] = consts.API_KEY_OPEN_AI
-client = OpenAI()
 
 def show_audio_history():
   for author, message in st.session_state.audio_history:
@@ -39,17 +41,12 @@ def show_audio_history():
 st.title("AI-powered Text To Speech")
 voices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'] 
 selected_voice = st.selectbox("Choose a voice", voices)
-
-
-# Initialize chat history in session state
-if 'audio_history' not in st.session_state:
-  st.session_state.audio_history = []
     
 # Chat input for user message
-user_message = st.chat_input("Type something to for AI to read...")
+user_message = st.chat_input("Type something here for AI to read...")
 
 if user_message:
-  clear_history()  # Clear the chat history
+  clear_history() 
   # Add user message to chat history
   st.session_state.audio_history.append(('user', user_message))
   st.session_state.audio_history.append(('AI Assistant', user_message))

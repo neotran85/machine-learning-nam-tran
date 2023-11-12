@@ -115,7 +115,7 @@ if uploaded_file is not None:
     # st.image(rectangle_image, caption='Image with Rectangle.', use_column_width=True)
     # additional_prompt = " In extending the image, please avoid creating any separate, distinct sections that do not seamlessly blend with the existing content. Do not generate isolated elements or images within images, such as gallery pictures, that would disrupt the continuity of the scene. The extension should appear as a natural, uninterrupted continuation of the original image, without any abrupt changes in theme, style, or content."
     additional_prompt = ""
-    prompt = st.text_input('Tell us about what you would like the extended area to be:', '')
+    prompt = st.text_input('Tell AI about what you would like the extended area to be:', '')
     if st.button("Extend the image"):
         with st.spinner("Extending the image..."):
             # prompt = prompt + additional_prompt
