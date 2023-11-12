@@ -93,6 +93,7 @@ def show_left_menu():
                                 ("image_upscale", "Image Upscaler"),
                                 ("image_extender", "Image Extender"),
                                 ("image_face_fix", "Fix Faces"),
+                                ("image_variants", "Image Variants"),
                                 ("image_explanation", "Picture Explanation"),
                                 ("image_annotation", "Video/Images Annotation"),
                                 ("image_pose_detector", "Pose Detector"),
