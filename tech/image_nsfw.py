@@ -31,7 +31,7 @@ if upload_image is not None:
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": "Count animals in the image. List them out for every kind."},
+                            {"type": "text", "text": "Check if the image is safe for work."},
                             {
                                 "type": "image_url",
                                 "image_url": {
